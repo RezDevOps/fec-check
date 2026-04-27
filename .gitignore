@@ -1,0 +1,53 @@
+# --- Sorties de build .NET ---
+bin/
+obj/
+out/
+publish/
+*.dll
+*.exe
+*.pdb
+*.deps.json
+*.runtimeconfig.json
+
+# --- Tests / couverture ---
+TestResults/
+coverage/
+*.coverage
+*.trx
+*.coveragexml
+*.cobertura.xml
+
+# --- NuGet ---
+.nuget/
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# --- IDE Microsoft / JetBrains ---
+.vs/
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Outils CI / scripts locaux ---
+*.log
+.tools/
+.local/
+
+# --- Sorties de l'outil lui-même (rapports générés en dev) ---
+/rapports/
+*.fec-check.md
+*.fec-check.json

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>RezDevOps.FecCheck.Core</RootNamespace>
+    <AssemblyName>RezDevOps.FecCheck.Core</AssemblyName>
+    <Description>Bibliothèque de validation FEC (Fichier des Écritures Comptables). Sans I/O, testable à 100 %.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RezDevOps.FecCheck.Core.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,52 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Une seule exécution active par branche : annule les runs périmés
+# pour ne pas gaspiller les minutes Actions.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build et tests (Ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installer le SDK .NET 8 LTS
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Afficher la version du SDK
+        run: dotnet --version
+
+      - name: Restaurer les dépendances
+        run: dotnet restore fec-check.sln
+
+      - name: Build (Release)
+        run: dotnet build fec-check.sln --no-restore --configuration Release
+
+      - name: Tests (Release)
+        run: >-
+          dotnet test fec-check.sln
+          --no-build
+          --configuration Release
+          --logger "console;verbosity=normal"
+          --collect:"XPlat Code Coverage"
+
+      - name: Vérifier le format C#
+        run: dotnet format fec-check.sln --verify-no-changes --severity warn

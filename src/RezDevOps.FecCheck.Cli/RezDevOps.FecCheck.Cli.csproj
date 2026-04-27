@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>RezDevOps.FecCheck.Cli</RootNamespace>
+    <AssemblyName>fec-check</AssemblyName>
+    <Description>CLI de validation FEC. Couche I/O mince autour de RezDevOps.FecCheck.Core.</Description>
+    <!-- Nom de commande exposé : fec-check (cf. AssemblyName). -->
+    <RollForward>LatestMajor</RollForward>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RezDevOps.FecCheck.Core\RezDevOps.FecCheck.Core.csproj" />
+  </ItemGroup>
+
+</Project>

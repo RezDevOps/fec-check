@@ -1,0 +1,29 @@
+<!--
+  Propriétés communes à tous les projets de la solution fec-check.
+  Une seule source de vérité pour la cible .NET, le niveau de langue,
+  et les métadonnées d'assemblage.
+-->
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NeutralLanguage>fr-FR</NeutralLanguage>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Métadonnées d'assemblage">
+    <Authors>Rudy Rezaire</Authors>
+    <Company>RezDevOps</Company>
+    <Product>fec-check</Product>
+    <Copyright>Copyright (c) 2026 Rudy Rezaire / RezDevOps</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/RezDevOps/fec-check</RepositoryUrl>
+  </PropertyGroup>
+
+</Project>
