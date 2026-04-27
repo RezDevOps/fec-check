@@ -22,4 +22,17 @@
     <ProjectReference Include="..\..\src\RezDevOps.FecCheck.Core\RezDevOps.FecCheck.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup Label="Fixtures FEC">
+    <!--
+      Copie l'arborescence tests/fixtures/ vers bin/.../fixtures/ pour que
+      les tests puissent y accéder via AppContext.BaseDirectory. Le Link
+      préserve la structure de sous-dossiers (conforme/, non-conforme/format/).
+    -->
+    <None Include="..\fixtures\**\*"
+          Exclude="..\fixtures\**\README.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>fixtures\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </None>
+  </ItemGroup>
+
 </Project>

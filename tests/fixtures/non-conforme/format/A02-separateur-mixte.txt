@@ -1,0 +1,4 @@
+JournalCode	JournalLib	EcritureNum	EcritureDate	CompteNum	CompteLib	CompAuxNum	CompAuxLib	PieceRef	PieceDate	EcritureLib	Debit	Credit	EcritureLet	DateLet	ValidDate	Montantdevise	Idevise
+AC	Achats	AC0001	20260105	607000	Achats marchandises			FA-2026-0001	20260105	Facture 2026-0001 DURAND	1000,00	0,00			20260106		
+AC|Achats|AC0001|20260105|401DURAND|Fournisseur DURAND SA|DURAND|DURAND SA|FA-2026-0001|20260105|Facture 2026-0001 DURAND|0,00|1200,00|A|20260205|20260106||
+AC	Achats	AC0001	20260105	445660	TVA deductible 20%			FA-2026-0001	20260105	Facture 2026-0001 DURAND	200,00	0,00			20260106		

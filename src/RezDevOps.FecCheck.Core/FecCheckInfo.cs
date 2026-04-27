@@ -3,9 +3,8 @@
 namespace RezDevOps.FecCheck.Core;
 
 /// <summary>
-/// Métadonnées statiques de la bibliothèque. Sert de point d'entrée trivial
-/// pour vérifier que l'assemblage est référencé correctement (J0).
-/// La logique de validation viendra aux jalons J1, J2, J3.
+/// Métadonnées statiques de la bibliothèque. Source de vérité pour le nom
+/// du produit et la version, consommée par le CLI et les rapports.
 /// </summary>
 public static class FecCheckInfo
 {
@@ -16,7 +15,14 @@ public static class FecCheckInfo
     /// Version courante du produit, source de vérité pour le CLI et le rapport.
     /// Mise à jour à chaque tag selon Semantic Versioning.
     /// </summary>
-    public const string Version = "0.0.0";
+    /// <remarks>
+    /// Historique :
+    /// <list type="bullet">
+    /// <item><description>0.1.0 — J1 : Famille A (conformité de format) opérationnelle.</description></item>
+    /// <item><description>0.0.0 — J0 : cadrage initial du repo, aucune règle implémentée.</description></item>
+    /// </list>
+    /// </remarks>
+    public const string Version = "0.1.0";
 
     /// <summary>
     /// Famille de règles de validation, telle que définie dans le cadrage §4.1.

@@ -7,6 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!--
+      Package Microsoft officiel requis pour décoder ISO-8859-15 hors Windows.
+      L'A. 47 A-1 LPF autorise cet encodage pour les FEC ; sans ce package, la
+      BCL .NET 8 ne le fournit que sur Windows. Justification documentée dans
+      le README §Dépendances. Aucune autre dépendance NuGet tierce.
+    -->
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="RezDevOps.FecCheck.Core.Tests" />
   </ItemGroup>
 

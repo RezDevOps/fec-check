@@ -2,7 +2,7 @@
 
 > Validateur de **Fichier des Écritures Comptables** (FEC) pour les TPE et PME françaises.
 > Ligne de commande, déterministe, sans réseau, en français.
-> Statut : **v0.0.0 — cadrage (J0)**. La validation arrive aux jalons J1 / J2 / J3 (cf. [`CHANGELOG.md`](CHANGELOG.md)).
+> Statut : **v0.1.0 — Famille A (format) opérationnelle (J1)**. Familles B et C aux jalons suivants (cf. [`CHANGELOG.md`](CHANGELOG.md)).
 
 ---
 
@@ -61,25 +61,56 @@ Garde-fous explicites pour ne pas refaire l'erreur classique du « petit utilita
 - **Souveraineté** — norme purement française, **aucune dépendance** à un service tiers, aucun appel réseau, aucune télémétrie, exécution 100 % locale.
 - **Déterminisme** — même fichier d'entrée = même rapport de sortie, à l'octet près. Reproductible.
 - **Pédagogie** — chaque message d'erreur explique *quoi*, *où*, *pourquoi* (avec citation), *comment corriger*.
-- **Sobriété** — aucune dépendance NuGet tierce au-delà de la BCL. Si une dépendance devient nécessaire, elle est argumentée dans ce README.
+- **Sobriété** — dépendances NuGet réduites au minimum. Si une dépendance devient nécessaire, elle est argumentée dans la section [Dépendances](#dépendances) ci-dessous.
 
-## Usage (cible MVP)
+## Dépendances
+
+À v0.1.0, **une seule** dépendance NuGet est ajoutée à la bibliothèque `Core`, en plus de la BCL .NET 8 :
+
+| Package | Version | Émetteur | Justification |
+|---|---|---|---|
+| `System.Text.Encoding.CodePages` | `8.0.0` | Microsoft (officiel) | Le runtime .NET sur Linux et macOS ne charge pas par défaut la code page `28605` (ISO-8859-15 / Latin-9), pourtant exigée par la norme FEC. Ce package, publié par Microsoft, expose la code page de manière portable. Le runtime Windows l'inclut déjà nativement. |
+
+Les projets `Cli` et `Tests` n'ajoutent aucune dépendance tierce supplémentaire (xUnit + FluentAssertions côté tests uniquement). Cette posture sera maintenue aux jalons suivants : toute nouvelle dépendance sera justifiée ici.
+
+## Usage
+
+À partir de **v0.1.0**, le binaire valide effectivement la Famille A (format) et imprime un rapport console structuré en français. Les options `--output rapport.md` et `--json rapport.json` arriveront au jalon J4.
 
 ```bash
-# Validation simple, rapport sur la sortie standard
+# Validation d'un FEC, rapport sur la sortie standard
 fec-check chemin/vers/mon-fec.txt
 
-# Rapport Markdown vers fichier
-fec-check chemin/vers/mon-fec.txt --output rapport.md
-
-# Rapport JSON (schéma versionné) pour intégration script
-fec-check chemin/vers/mon-fec.txt --json rapport.json
-
-# Aide complète
+# Aide
 fec-check --help
+
+# Version
+fec-check --version
 ```
 
-**Codes de retour processus** (cible, pour intégration CI / scripts) :
+**Exemple sur la fixture conforme livrée avec le repo** :
+
+```text
+$ fec-check tests/fixtures/conforme/fec-minimal-conforme.txt
+Fichier analysé : tests/fixtures/conforme/fec-minimal-conforme.txt
+Encodage détecté : UTF-8 (sans BOM)
+Séparateur détecté : tabulation
+Fin de ligne : LF
+Lignes lues : 9
+
+Verdict : CONFORME (aucune anomalie de format détectée).
+```
+
+**Exemple sur une fixture pathologique** (ligne tronquée à 17 champs) :
+
+```text
+$ fec-check tests/fixtures/non-conforme/format/A05-ligne-tronquee.txt
+[…]
+Verdict : NON CONFORME (1 anomalie détectée).
+  - [A05] Ligne 3 : 17 champs au lieu de 18 attendus.
+```
+
+**Codes de retour processus** (utilisables en CI / script) :
 
 | Code | Signification |
 |---|---|
@@ -89,7 +120,7 @@ fec-check --help
 | `3` | Erreur d'exécution |
 | `64` | Usage incorrect (`EX_USAGE`) |
 
-Un exemple de rapport de sortie sera publié dans [`docs/rapport-exemple.md`](docs/rapport-exemple.md) au jalon J4.
+Un exemple complet de rapport Markdown sera publié dans [`docs/rapport-exemple.md`](docs/rapport-exemple.md) au jalon J4.
 
 ## Installation
 
@@ -140,8 +171,8 @@ fec-check/
 
 | Jalon | Contenu | État |
 |---|---|---|
-| **J0** | Repo, README, structure, CI minimale, LICENSE, fixture conforme | **en cours** |
-| **J1** | Famille A — conformité de format | à venir (`v0.1.0`) |
+| **J0** | Repo, README, structure, CI minimale, LICENSE, fixture conforme | livré (`v0.0.0`) |
+| **J1** | Famille A — conformité de format | **livré (`v0.1.0`)** |
 | **J2** | Famille B — cohérence comptable | à venir (`v0.2.0`) |
 | **J3** | Famille C — cohérence temporelle | à venir (`v0.3.0`) |
 | **J4** | Rapport Markdown finalisé, rapport JSON, codes de retour | à venir (`v0.4.0`) |

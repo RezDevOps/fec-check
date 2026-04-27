@@ -6,11 +6,10 @@ using Xunit;
 namespace RezDevOps.FecCheck.Core.Tests;
 
 /// <summary>
-/// Tests fumée du jalon J0 : on s'assure que la solution compile, que
-/// les projets sont liés correctement et que le pipeline xUnit tourne.
-/// Les tests métier arrivent au J1.
+/// Garde-fous sur les métadonnées statiques du produit. Évitent qu'un
+/// renommage involontaire ou un format de version invalide ne passe en CI.
 /// </summary>
-public sealed class SmokeTests
+public sealed class FecCheckInfoTests
 {
     [Fact]
     public void ProductName_DoitEtreFecCheck()
@@ -21,7 +20,6 @@ public sealed class SmokeTests
     [Fact]
     public void Version_DoitSuivreSemver()
     {
-        // J0 = 0.0.0 (cadrage seulement). Le format doit rester semver.
         FecCheckInfo.Version.Should().MatchRegex(@"^\d+\.\d+\.\d+(-[\w\.]+)?$");
     }
 
@@ -31,8 +29,8 @@ public sealed class SmokeTests
     [InlineData(FecCheckInfo.RuleFamily.Temporal)]
     public void TroisFamillesDeRegles_SontDefinies(FecCheckInfo.RuleFamily famille)
     {
-        // Les trois familles du cadrage §4.1 doivent exister dès J0,
-        // même si aucune règle n'est encore implémentée.
+        // Les trois familles du cadrage §4.1 doivent rester définies, même
+        // tant que B et C n'ont pas encore d'implémentation (J2/J3).
         Enum.IsDefined(famille).Should().BeTrue();
     }
 }
