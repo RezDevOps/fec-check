@@ -71,7 +71,7 @@ static void PrintUsage()
     Console.WriteLine("  3   Erreur d'exécution.");
     Console.WriteLine("  64  Usage incorrect.");
     Console.WriteLine();
-    Console.WriteLine($"Version : {FecCheckInfo.Version} — règles couvertes : Famille A (format).");
+    Console.WriteLine($"Version : {FecCheckInfo.Version} — règles couvertes : Famille A (format) + Famille B (cohérence comptable).");
     Console.WriteLine("Documentation : https://github.com/RezDevOps/fec-check");
 }
 
@@ -92,7 +92,7 @@ static void PrintReport(string path, ValidationReport report)
 
     if (report.Findings.Count == 0)
     {
-        Console.WriteLine("Aucune anomalie de format détectée.");
+        Console.WriteLine("Aucune anomalie détectée.");
         return;
     }
 

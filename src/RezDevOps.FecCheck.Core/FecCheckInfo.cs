@@ -18,11 +18,12 @@ public static class FecCheckInfo
     /// <remarks>
     /// Historique :
     /// <list type="bullet">
+    /// <item><description>0.2.0 — J2 : Famille B (cohérence comptable) opérationnelle.</description></item>
     /// <item><description>0.1.0 — J1 : Famille A (conformité de format) opérationnelle.</description></item>
     /// <item><description>0.0.0 — J0 : cadrage initial du repo, aucune règle implémentée.</description></item>
     /// </list>
     /// </remarks>
-    public const string Version = "0.1.0";
+    public const string Version = "0.2.0";
 
     /// <summary>
     /// Famille de règles de validation, telle que définie dans le cadrage §4.1.

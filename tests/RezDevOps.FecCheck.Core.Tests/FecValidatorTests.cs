@@ -118,6 +118,96 @@ public sealed class FecValidatorTests
             .Contain(f => f.Rule.Id == "A07" && f.LineNumber == 3);
     }
 
+    // ----- B01 — Équilibre par écriture ------------------------------------
+
+    [Fact]
+    public void Validate_FixtureB01EcritureDesequilibree_RemonteDeuxB01_SansB02()
+    {
+        var report = FecValidator.Validate(TestFixtures.B01_EcritureDesequilibree);
+
+        report.Verdict.Should().Be(Verdict.NonConforme);
+
+        // Deux écritures localement déséquilibrées (AC0001 et VE0001),
+        // équilibre global préservé : pas de B02.
+        report.Findings.Where(f => f.Rule.Id == "B01").Should().HaveCount(2);
+        report.Findings.Should().NotContain(f => f.Rule.Id == "B02");
+
+        // Le finding B01 cite la première ligne où l'écriture apparaît.
+        report.Findings.Should().Contain(f => f.Rule.Id == "B01" && f.LineNumber == 2);
+        report.Findings.Should().Contain(f => f.Rule.Id == "B01" && f.LineNumber == 5);
+    }
+
+    // ----- B02 — Équilibre global ------------------------------------------
+
+    [Fact]
+    public void Validate_FixtureB02DesequilibreGlobal_RemonteB02_EtB01SurEcritureFautive()
+    {
+        var report = FecValidator.Validate(TestFixtures.B02_TotalGlobalDesequilibre);
+
+        report.Verdict.Should().Be(Verdict.NonConforme);
+
+        // B02 est global : LineNumber null.
+        report.Findings.Should().ContainSingle(f => f.Rule.Id == "B02")
+            .Which.LineNumber.Should().BeNull();
+
+        // L'écriture qui crée le déséquilibre global est aussi déséquilibrée localement.
+        report.Findings.Should().Contain(f => f.Rule.Id == "B01" && f.LineNumber == 2);
+    }
+
+    // ----- B03 — Format numérique invalide ---------------------------------
+
+    [Fact]
+    public void Validate_FixtureB03FormatInvalide_RemonteB03_SurLaBonneLigne_SansBruitB01B02()
+    {
+        var report = FecValidator.Validate(TestFixtures.B03_FormatNumeriqueInvalide);
+
+        report.Verdict.Should().Be(Verdict.NonConforme);
+        report.Findings.Should().Contain(f => f.Rule.Id == "B03" && f.LineNumber == 2);
+
+        // Le montant 1000,00000 reste parsable comme 1000m, donc l'agrégat
+        // d'écriture reste équilibré : ni B01 ni B02 ne doivent se déclencher.
+        report.Findings.Should().NotContain(f => f.Rule.Id == "B01" || f.Rule.Id == "B02");
+    }
+
+    // ----- B04 — Mutuelle exclusion Débit/Crédit ---------------------------
+
+    [Fact]
+    public void Validate_FixtureB04DebitEtCreditNonNuls_RemonteB04_AvertissementSeulement()
+    {
+        var report = FecValidator.Validate(TestFixtures.B04_DebitEtCreditNonNuls);
+
+        // L'écriture ajoutée (OD0001) est auto-équilibrée (D=C=150) → pas
+        // d'erreur, juste un avertissement B04 sur la ligne 10.
+        report.Verdict.Should().Be(Verdict.ConformeAvecAvertissements);
+        report.Findings.Should().ContainSingle()
+            .Which.Should().Match<Finding>(f => f.Rule.Id == "B04" && f.LineNumber == 10);
+    }
+
+    // ----- B05 — Cohérence CompAuxNum / CompAuxLib --------------------------
+
+    [Fact]
+    public void Validate_FixtureB05CompAuxNumSansLib_RemonteB05_SurLaBonneLigne()
+    {
+        var report = FecValidator.Validate(TestFixtures.B05_CompAuxNumSansLib);
+
+        report.Verdict.Should().Be(Verdict.NonConforme);
+        report.Findings.Should().ContainSingle()
+            .Which.Should().Match<Finding>(f => f.Rule.Id == "B05" && f.LineNumber == 4);
+    }
+
+    // ----- B06 — Compte auxiliaire sur compte non-tiers --------------------
+
+    [Fact]
+    public void Validate_FixtureB06CompAuxSurCompteNonTiers_RemonteB06_AvertissementSeulement()
+    {
+        var report = FecValidator.Validate(TestFixtures.B06_CompAuxSurCompteNonTiers);
+
+        // Avertissement seul : le fichier reste conforme avec réserve.
+        report.Verdict.Should().Be(Verdict.ConformeAvecAvertissements);
+        report.Findings.Should().ContainSingle()
+            .Which.Should().Match<Finding>(f => f.Rule.Id == "B06" && f.LineNumber == 6);
+    }
+
     // ----- Erreurs d'I/O ---------------------------------------------------
 
     [Fact]

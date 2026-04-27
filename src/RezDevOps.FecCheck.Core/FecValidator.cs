@@ -5,8 +5,8 @@ namespace RezDevOps.FecCheck.Core;
 /// <summary>
 /// Point d'entrée public de la bibliothèque. Orchestre la validation d'un FEC
 /// en streaming : détection d'encodage, lecture ligne par ligne, application
-/// des règles de la Famille A (J1). Les Familles B (J2) et C (J3) viendront
-/// se brancher ici sans casser l'API.
+/// des règles des Familles A (J1) et B (J2). La Famille C (J3) viendra se
+/// brancher ici sans casser l'API.
 /// </summary>
 /// <remarks>
 /// Cette classe est sans état : elle expose des méthodes statiques. Aucun I/O
@@ -137,10 +137,12 @@ public static class FecValidator
                 LignesLues: reader.LineNumber);
         }
 
-        // -- A02 (lignes de données) + A05 + A07 -----------------------------
+        // -- A02 (lignes de données) + A05 + A07 + Famille B -----------------
         var alternativeSeparator = separator.Value == SeparatorDetector.Tabulation
             ? SeparatorDetector.Pipe
             : SeparatorDetector.Tabulation;
+
+        var accounting = new AccountingContext();
 
         while (reader.TryReadLine(out var line))
         {
@@ -155,13 +157,22 @@ public static class FecValidator
                         + $"(« {Describe(separator.Value)} » attendu, « {Describe(alternativeSeparator)} » trouvé).",
                     Contexte: line));
 
-                // On n'évalue pas A05/A07 sur une ligne au mauvais séparateur :
-                // les findings seraient redondants et trompeurs.
+                // On n'évalue pas A05/A07/Famille B sur une ligne au mauvais
+                // séparateur : les findings seraient redondants et trompeurs.
                 continue;
             }
 
-            DataLineValidator.Validate(line, separator.Value, reader.LineNumber, findings);
+            // Le split est fait une seule fois et partagé entre les deux
+            // évaluateurs (par-ligne et inter-lignes), conformément à la
+            // contrainte de perf §6.3 du cadrage.
+            var fields = line.Split(separator.Value);
+
+            DataLineValidator.Validate(fields, line, reader.LineNumber, findings);
+            accounting.Observe(fields, reader.LineNumber, findings);
         }
+
+        // -- Famille B agrégée — B01 (équilibre par écriture) + B02 (global) -
+        accounting.EmitFinalFindings(findings);
 
         // -- A06 — cohérence des fins de ligne -------------------------------
         var detectedEol = reader.GetDetectedLineEnding();

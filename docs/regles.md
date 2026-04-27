@@ -34,12 +34,12 @@ Cœur métier : ce qu'un vérificateur regarde en premier.
 
 | ID | Règle | Sévérité | Source | Jalon | État |
 |---|---|---|---|---|---|
-| B01 | Pour chaque couple (`JournalCode`, `EcritureNum`), somme `Debit` = somme `Credit` | Erreur | Principe de la partie double, A. 47 A-1 LPF | J2 | — |
-| B02 | Somme globale `Debit` du fichier = somme globale `Credit` | Erreur | Principe de la partie double | J2 | — |
-| B03 | Format numérique des montants : séparateur décimal cohérent (`,` ou `.`), pas de séparateur de milliers, deux décimales attendues | Erreur | A. 47 A-1 LPF | J2 | — |
-| B04 | Mutuelle exclusion `Debit`/`Credit` sur une même ligne (l'un des deux est zéro), sauf cas explicitement documenté | Avertissement | Pratique comptable standard | J2 | — |
-| B05 | Si `CompAuxNum` est rempli, alors `CompAuxLib` doit l'être aussi (et inversement) | Erreur | A. 47 A-1 LPF | J2 | — |
-| B06 | Si `CompAuxNum` est rempli, alors `CompteNum` commence par `4` (compte de tiers — racines 401, 411, 421, 425, etc.) | Avertissement | PCG | J2 | — |
+| B01 | Pour chaque couple (`JournalCode`, `EcritureNum`), somme `Debit` = somme `Credit` | Erreur | Principe de la partie double, A. 47 A-1 LPF | J2 | ✓ v0.2.0 |
+| B02 | Somme globale `Debit` du fichier = somme globale `Credit` | Erreur | Principe de la partie double | J2 | ✓ v0.2.0 |
+| B03 | Format numérique des montants : séparateur décimal cohérent (`,` ou `.`) sur tout le fichier, pas de séparateur de milliers, 0 à 4 décimales tolérées | Erreur | A. 47 A-1 LPF | J2 | ✓ v0.2.0 |
+| B04 | Mutuelle exclusion `Debit`/`Credit` sur une même ligne (l'un des deux est zéro), sauf cas explicitement documenté | Avertissement | Pratique comptable standard | J2 | ✓ v0.2.0 |
+| B05 | Si `CompAuxNum` est rempli, alors `CompAuxLib` doit l'être aussi (et inversement) | Erreur | A. 47 A-1 LPF | J2 | ✓ v0.2.0 |
+| B06 | Si `CompAuxNum` est rempli, alors `CompteNum` commence par `4` (compte de tiers — racines 401, 411, 421, 425, etc.) | Avertissement | PCG | J2 | ✓ v0.2.0 |
 
 ## Famille C — Cohérence temporelle
 

@@ -2,7 +2,7 @@
 
 > Validateur de **Fichier des Écritures Comptables** (FEC) pour les TPE et PME françaises.
 > Ligne de commande, déterministe, sans réseau, en français.
-> Statut : **v0.1.0 — Famille A (format) opérationnelle (J1)**. Familles B et C aux jalons suivants (cf. [`CHANGELOG.md`](CHANGELOG.md)).
+> Statut : **v0.2.0 — Familles A (format) et B (cohérence comptable) opérationnelles (J2)**. Famille C au jalon suivant (cf. [`CHANGELOG.md`](CHANGELOG.md)).
 
 ---
 
@@ -75,7 +75,7 @@ Les projets `Cli` et `Tests` n'ajoutent aucune dépendance tierce supplémentair
 
 ## Usage
 
-À partir de **v0.1.0**, le binaire valide effectivement la Famille A (format) et imprime un rapport console structuré en français. Les options `--output rapport.md` et `--json rapport.json` arriveront au jalon J4.
+À partir de **v0.2.0**, le binaire valide les Familles A (format) et B (cohérence comptable) et imprime un rapport console structuré en français. Les options `--output rapport.md` et `--json rapport.json` arriveront au jalon J4.
 
 ```bash
 # Validation d'un FEC, rapport sur la sortie standard
@@ -172,8 +172,8 @@ fec-check/
 | Jalon | Contenu | État |
 |---|---|---|
 | **J0** | Repo, README, structure, CI minimale, LICENSE, fixture conforme | livré (`v0.0.0`) |
-| **J1** | Famille A — conformité de format | **livré (`v0.1.0`)** |
-| **J2** | Famille B — cohérence comptable | à venir (`v0.2.0`) |
+| **J1** | Famille A — conformité de format | livré (`v0.1.0`) |
+| **J2** | Famille B — cohérence comptable | **livré (`v0.2.0`)** |
 | **J3** | Famille C — cohérence temporelle | à venir (`v0.3.0`) |
 | **J4** | Rapport Markdown finalisé, rapport JSON, codes de retour | à venir (`v0.4.0`) |
 | **J5** | Pipeline release multi-OS, premiers binaires publiés | à venir (`v1.0.0`) |

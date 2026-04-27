@@ -13,18 +13,27 @@ namespace RezDevOps.FecCheck.Core.Tests;
 public sealed class RulesCatalogTests
 {
     [Fact]
-    public void All_ContientLesSeptReglesDeLaFamilleA_AJalonJ1()
+    public void All_ContientLesReglesDesFamillesAEtB_AJalonJ2()
     {
         Rules.All.Select(r => r.Id).Should().BeEquivalentTo(new[]
         {
             "A01", "A02", "A03", "A04", "A05", "A06", "A07",
+            "B01", "B02", "B03", "B04", "B05", "B06",
         });
     }
 
     [Fact]
-    public void All_ToutesLesReglesAppartiennentALaFamilleFormat_AJalonJ1()
+    public void All_FamilleA_EstFormat()
     {
-        Rules.All.Should().OnlyContain(r => r.Famille == FecCheckInfo.RuleFamily.Format);
+        Rules.All.Where(r => r.Id.StartsWith('A'))
+            .Should().OnlyContain(r => r.Famille == FecCheckInfo.RuleFamily.Format);
+    }
+
+    [Fact]
+    public void All_FamilleB_EstAccounting()
+    {
+        Rules.All.Where(r => r.Id.StartsWith('B'))
+            .Should().OnlyContain(r => r.Famille == FecCheckInfo.RuleFamily.Accounting);
     }
 
     [Fact]
@@ -56,6 +65,12 @@ public sealed class RulesCatalogTests
     [InlineData("A05", Severity.Erreur)]
     [InlineData("A06", Severity.Avertissement)]
     [InlineData("A07", Severity.Erreur)]
+    [InlineData("B01", Severity.Erreur)]
+    [InlineData("B02", Severity.Erreur)]
+    [InlineData("B03", Severity.Erreur)]
+    [InlineData("B04", Severity.Avertissement)]
+    [InlineData("B05", Severity.Erreur)]
+    [InlineData("B06", Severity.Avertissement)]
     public void Severite_AlignéeSurDocsRegles(string ruleId, Severity expected)
     {
         // Doit rester aligné avec docs/regles.md, qui est la source de vérité

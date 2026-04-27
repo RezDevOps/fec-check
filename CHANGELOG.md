@@ -7,10 +7,41 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 ## [Non publié]
 
 ### À venir
-- **J2 (`v0.2.0`)** — Famille B : cohérence comptable (équilibres débit/crédit par écriture et global, format numérique des montants, mutuelle exclusion débit/crédit, comptes auxiliaires).
 - **J3 (`v0.3.0`)** — Famille C : cohérence temporelle (format des dates `AAAAMMJJ`, écritures dans la période d'exercice, `ValidDate >= EcritureDate`, chronologie par journal, signalement des écritures non validées).
 - **J4 (`v0.4.0`)** — Rapport Markdown finalisé, rapport JSON (schéma versionné), affinage des codes de retour processus.
 - **J5 (`v1.0.0`)** — Pipeline de release multi-OS, premiers binaires self-contained publiés (Windows x64, Linux x64, macOS).
+
+## [0.2.0] — 2026-04-27
+
+Jalon **J2** clos : la Famille B (cohérence comptable) est entièrement
+opérationnelle. À ce stade, `fec-check <chemin>` détecte treize types
+d'anomalies (sept de format en Famille A, six de cohérence comptable en
+Famille B) et retourne un verdict + un code de retour processus
+exploitable en CI.
+
+### Ajouté
+- Règles B01 à B06 (Famille B — Cohérence comptable) implémentées et couvertes par tests :
+  - **B01** (Erreur) — Équilibre Débit/Crédit par couple (`JournalCode`, `EcritureNum`). Une seule entrée de rapport par écriture déséquilibrée, citant les sommes et l'écart.
+  - **B02** (Erreur) — Équilibre global du fichier (somme Débit = somme Crédit).
+  - **B03** (Erreur) — Format numérique des montants : 0 à 4 décimales tolérées, pas de séparateur de milliers, séparateur décimal (`,` ou `.`) cohérent sur tout le fichier (la convention est fixée par la première occurrence).
+  - **B04** (Avertissement) — Mutuelle exclusion `Debit`/`Credit` non nuls sur la même ligne.
+  - **B05** (Erreur) — `CompAuxNum` et `CompAuxLib` remplis ensemble ou tous deux vides.
+  - **B06** (Avertissement) — Un compte auxiliaire implique un `CompteNum` commençant par `'4'` (compte de tiers PCG).
+- Nouvelle classe interne `AccountingContext` qui porte l'état inter-lignes (agrégateur d'écritures pour B01, accumulateurs globaux pour B02, tracker de séparateur décimal pour B03). Empreinte mémoire en *O(nombre d'écritures distinctes)*, compatible avec la cible §6.3 du cadrage.
+- 6 fixtures pathologiques (`tests/fixtures/non-conforme/comptable/`), une par règle, avec README expliquant l'anomalie injectée et la procédure de régénération `awk`.
+- 6 tests xUnit B01-B06 sur la pattern existante (verdict + au moins le finding attendu sur la bonne ligne).
+
+### Modifié
+- `FecCheckInfo.Version` passe de `0.1.0` à `0.2.0`.
+- Catalogue `Rules.All` étendu : 13 règles désormais (A01-A07 + B01-B06).
+- `DataLineValidator.Validate(...)` accepte désormais `string[] fields` plutôt que `string line` : le découpage est fait une seule fois au niveau de `FecValidator` et partagé avec `AccountingContext` (perf §6.3).
+- CLI : la ligne d'aide « règles couvertes » mentionne maintenant les Familles A (format) et B (cohérence comptable).
+- `RulesCatalogTests` : sévérités B01-B06 ajoutées au théorème de cohérence avec `docs/regles.md` ; les asserts par-famille sont scindés (Famille A `Format`, Famille B `Accounting`).
+
+### Dépendances
+- Aucune nouvelle dépendance NuGet ajoutée. La Famille B est implémentée
+  avec la BCL .NET 8 uniquement (`System.Globalization`,
+  `System.Text.RegularExpressions`).
 
 ## [0.1.0] — 2026-04-27
 

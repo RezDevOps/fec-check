@@ -34,6 +34,24 @@ internal static class TestFixtures
     /// <summary>Fixture pour <see cref="Rules.A07"/> (champ JournalCode vide).</summary>
     public static string A07_ChampObligatoireVide => Path("non-conforme", "format", "A07-champ-obligatoire-vide.txt");
 
+    /// <summary>Fixture pour <see cref="Rules.B01"/> (deux écritures localement déséquilibrées, équilibre global préservé).</summary>
+    public static string B01_EcritureDesequilibree => Path("non-conforme", "comptable", "B01-ecriture-desequilibree.txt");
+
+    /// <summary>Fixture pour <see cref="Rules.B02"/> (déséquilibre global du fichier).</summary>
+    public static string B02_TotalGlobalDesequilibre => Path("non-conforme", "comptable", "B02-total-global-desequilibre.txt");
+
+    /// <summary>Fixture pour <see cref="Rules.B03"/> (montant à 5 décimales).</summary>
+    public static string B03_FormatNumeriqueInvalide => Path("non-conforme", "comptable", "B03-format-numerique-invalide.txt");
+
+    /// <summary>Fixture pour <see cref="Rules.B04"/> (Débit et Crédit non nuls sur la même ligne).</summary>
+    public static string B04_DebitEtCreditNonNuls => Path("non-conforme", "comptable", "B04-debit-et-credit-non-nuls.txt");
+
+    /// <summary>Fixture pour <see cref="Rules.B05"/> (CompAuxNum rempli, CompAuxLib vide).</summary>
+    public static string B05_CompAuxNumSansLib => Path("non-conforme", "comptable", "B05-compaux-num-sans-lib.txt");
+
+    /// <summary>Fixture pour <see cref="Rules.B06"/> (CompAuxNum attaché à un compte non-tiers).</summary>
+    public static string B06_CompAuxSurCompteNonTiers => Path("non-conforme", "comptable", "B06-compaux-sur-compte-non-tiers.txt");
+
     private static string Path(params string[] parts) =>
         System.IO.Path.Combine(
             new[] { AppContext.BaseDirectory, "fixtures" }

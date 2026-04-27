@@ -13,7 +13,7 @@ namespace RezDevOps.FecCheck.Core;
 /// Familles couvertes par jalon :
 /// <list type="bullet">
 /// <item><description>J1 (v0.1.0) : Famille A — A01 à A07.</description></item>
-/// <item><description>J2 (v0.2.0) : Famille B — B01 à B06 (ajoutées plus tard).</description></item>
+/// <item><description>J2 (v0.2.0) : Famille B — B01 à B06.</description></item>
 /// <item><description>J3 (v0.3.0) : Famille C — C01 à C08 (ajoutées plus tard).</description></item>
 /// </list>
 /// </remarks>
@@ -77,6 +77,56 @@ public static class Rules
         Libelle: "Champs obligatoires non vides : JournalCode, EcritureNum, EcritureDate, CompteNum, EcritureLib, et soit Debit soit Credit non nul.",
         Source: "A. 47 A-1 LPF");
 
+    // --- Famille B — Cohérence comptable (J2) ------------------------------
+
+    /// <summary>B01 — Pour chaque couple (JournalCode, EcritureNum), somme Debit = somme Credit.</summary>
+    public static readonly Rule B01 = new(
+        Id: "B01",
+        Famille: RuleFamily.Accounting,
+        Severity: Severity.Erreur,
+        Libelle: "Pour chaque couple (JournalCode, EcritureNum), somme Debit = somme Credit.",
+        Source: "Principe de la partie double, A. 47 A-1 LPF");
+
+    /// <summary>B02 — Somme globale Debit du fichier = somme globale Credit.</summary>
+    public static readonly Rule B02 = new(
+        Id: "B02",
+        Famille: RuleFamily.Accounting,
+        Severity: Severity.Erreur,
+        Libelle: "Somme globale Debit du fichier = somme globale Credit.",
+        Source: "Principe de la partie double");
+
+    /// <summary>B03 — Format numérique des montants : séparateur décimal cohérent, pas de séparateur de milliers, 0 à 4 décimales tolérées.</summary>
+    public static readonly Rule B03 = new(
+        Id: "B03",
+        Famille: RuleFamily.Accounting,
+        Severity: Severity.Erreur,
+        Libelle: "Format numérique des montants : séparateur décimal cohérent (, ou .) sur tout le fichier, pas de séparateur de milliers, 0 à 4 décimales tolérées.",
+        Source: "A. 47 A-1 LPF");
+
+    /// <summary>B04 — Mutuelle exclusion Debit/Credit sur une même ligne (l'un des deux est zéro).</summary>
+    public static readonly Rule B04 = new(
+        Id: "B04",
+        Famille: RuleFamily.Accounting,
+        Severity: Severity.Avertissement,
+        Libelle: "Mutuelle exclusion Debit/Credit sur une même ligne (l'un des deux est zéro), sauf cas explicitement documenté.",
+        Source: "Pratique comptable standard");
+
+    /// <summary>B05 — Si CompAuxNum est rempli, alors CompAuxLib doit l'être aussi (et inversement).</summary>
+    public static readonly Rule B05 = new(
+        Id: "B05",
+        Famille: RuleFamily.Accounting,
+        Severity: Severity.Erreur,
+        Libelle: "Si CompAuxNum est rempli, alors CompAuxLib doit l'être aussi (et inversement).",
+        Source: "A. 47 A-1 LPF");
+
+    /// <summary>B06 — Si CompAuxNum est rempli, alors CompteNum commence par '4' (compte de tiers).</summary>
+    public static readonly Rule B06 = new(
+        Id: "B06",
+        Famille: RuleFamily.Accounting,
+        Severity: Severity.Avertissement,
+        Libelle: "Si CompAuxNum est rempli, alors CompteNum commence par '4' (compte de tiers — racines 401, 411, 421, 425, etc.).",
+        Source: "PCG");
+
     /// <summary>
     /// Toutes les règles connues du catalogue, dans l'ordre de leur identifiant.
     /// Utilisable pour générer la documentation, la liste --list-rules du CLI,
@@ -85,5 +135,6 @@ public static class Rules
     public static IReadOnlyList<Rule> All { get; } = new[]
     {
         A01, A02, A03, A04, A05, A06, A07,
+        B01, B02, B03, B04, B05, B06,
     };
 }
