@@ -2,7 +2,7 @@
 
 > Validateur de **Fichier des Écritures Comptables** (FEC) pour les TPE et PME françaises.
 > Ligne de commande, déterministe, sans réseau, en français.
-> Statut : **v0.3.0 — Familles A (format), B (cohérence comptable) et C (cohérence temporelle) opérationnelles (J3)**. Rapport JSON et binaires multi-OS aux jalons suivants (cf. [`CHANGELOG.md`](CHANGELOG.md)).
+> Statut : **v0.4.0 — 21 règles couvertes + sorties Markdown et JSON v1 (J4)**. Binaires multi-OS au jalon suivant (cf. [`CHANGELOG.md`](CHANGELOG.md)).
 
 ---
 
@@ -75,14 +75,26 @@ Les projets `Cli` et `Tests` n'ajoutent aucune dépendance tierce supplémentair
 
 ## Usage
 
-À partir de **v0.3.0**, le binaire valide les Familles A (format), B (cohérence comptable) et C (cohérence temporelle), et imprime un rapport console structuré en français. Les options `--output rapport.md` et `--json rapport.json` arriveront au jalon J4.
+À partir de **v0.4.0**, le binaire valide les 21 règles des Familles A, B et C, imprime un résumé console en français, et peut générer en plus un rapport Markdown finalisé (lecture humaine) et/ou un rapport JSON v1 (consommation programmatique).
 
 ```bash
-# Validation d'un FEC, rapport sur la sortie standard
+# Validation simple, résumé console uniquement
 fec-check chemin/vers/mon-fec.txt
 
 # Validation avec contrôle de la période d'exercice (règle C05)
 fec-check --exercice 2024-01-01:2024-12-31 chemin/vers/mon-fec.txt
+
+# Génération d'un rapport Markdown lisible par un dirigeant
+fec-check --output-md rapport.md chemin/vers/mon-fec.txt
+
+# Génération d'un rapport JSON pour intégration CI / script
+fec-check --output-json rapport.json chemin/vers/mon-fec.txt
+
+# Combinaison : exercice + Markdown + JSON
+fec-check --exercice 2024-01-01:2024-12-31 \
+          --output-md rapport.md \
+          --output-json rapport.json \
+          chemin/vers/mon-fec.txt
 
 # Aide
 fec-check --help
@@ -90,6 +102,8 @@ fec-check --help
 # Version
 fec-check --version
 ```
+
+Les fichiers de rapport sont écrits en UTF-8 sans BOM, fin de ligne LF, quel que soit l'OS. Les répertoires parents sont créés si nécessaire ; un fichier existant est écrasé sans avertissement.
 
 **Exemple sur la fixture conforme livrée avec le repo** :
 
@@ -123,7 +137,7 @@ Verdict : NON CONFORME (1 anomalie détectée).
 | `3` | Erreur d'exécution |
 | `64` | Usage incorrect (`EX_USAGE`) |
 
-Un exemple complet de rapport Markdown sera publié dans [`docs/rapport-exemple.md`](docs/rapport-exemple.md) au jalon J4.
+Un exemple complet de rapport Markdown est publié dans [`docs/rapport-exemple.md`](docs/rapport-exemple.md). Le contrat figé du rapport JSON est documenté dans [`docs/json-schema.md`](docs/json-schema.md) (`schemaVersion: 1`).
 
 ## Installation
 
@@ -138,7 +152,7 @@ dotnet build -c Release
 dotnet run --project src/RezDevOps.FecCheck.Cli -- --help
 ```
 
-Prérequis : SDK .NET 8 LTS.
+Prérequis : SDK .NET 8 LTS. La version est épinglée par le `global.json` à la racine (bande `8.0.x`, `rollForward: latestFeature`) — `dotnet build` choisira automatiquement le patch installé sur le poste tant qu'il appartient à cette bande.
 
 ## Architecture
 
@@ -157,7 +171,8 @@ fec-check/
 │   └── fixtures/                       # FEC d'exemple (conformes et pathologiques)
 ├── docs/
 │   ├── regles.md                       # règles implémentées et leurs sources
-│   └── rapport-exemple.md              # sortie type (J4)
+│   ├── json-schema.md                  # contrat du rapport JSON v1 (figé)
+│   └── rapport-exemple.md              # sortie type Markdown
 ├── .github/workflows/                  # CI
 ├── Directory.Build.props               # propriétés MSBuild communes
 ├── fec-check.sln
@@ -177,8 +192,8 @@ fec-check/
 | **J0** | Repo, README, structure, CI minimale, LICENSE, fixture conforme | livré (`v0.0.0`) |
 | **J1** | Famille A — conformité de format | livré (`v0.1.0`) |
 | **J2** | Famille B — cohérence comptable | livré (`v0.2.0`) |
-| **J3** | Famille C — cohérence temporelle | **livré (`v0.3.0`)** |
-| **J4** | Rapport Markdown finalisé, rapport JSON, codes de retour | à venir (`v0.4.0`) |
+| **J3** | Famille C — cohérence temporelle | livré (`v0.3.0`) |
+| **J4** | Rapport Markdown finalisé, rapport JSON v1, codes de retour | **livré (`v0.4.0`)** |
 | **J5** | Pipeline release multi-OS, premiers binaires publiés | à venir (`v1.0.0`) |
 
 Voir [`CHANGELOG.md`](CHANGELOG.md) pour le détail commit par commit.

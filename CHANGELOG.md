@@ -7,8 +7,59 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 ## [Non publié]
 
 ### À venir
-- **J4 (`v0.4.0`)** — Rapport Markdown finalisé, rapport JSON (schéma versionné), affinage des codes de retour processus.
 - **J5 (`v1.0.0`)** — Pipeline de release multi-OS, premiers binaires self-contained publiés (Windows x64, Linux x64, macOS).
+
+## [0.4.0] — 2026-04-28
+
+Jalon **J4** clos : les sorties fichier sont opérationnelles. À ce stade,
+`fec-check` peut produire un rapport Markdown destiné à un dirigeant non-tech
+**et** un rapport JSON v1 versionné, exploitable par un consommateur tiers
+(script, back-office RezDevOps, futur web upload). Les deux sorties sont
+indépendantes et combinables.
+
+### Ajouté
+- Nouveau composant Core `JsonReportWriter` : sérialise un `ValidationReport`
+  en JSON conforme au schéma `v1` (champ racine `schemaVersion: 1`),
+  source-genéré via `System.Text.Json` (AOT-friendly, cf. cadrage §6.1).
+- Nouveau composant Core `MarkdownReportWriter` : produit un rapport
+  pédagogique structuré (verdict, caractéristiques, synthèse par famille,
+  détail par anomalie groupé par famille, pied de page avec liens documentation).
+- Nouveau composant Core `ReportFileWriter` : helpers d'écriture vers fichier
+  en UTF-8 sans BOM, fin de ligne LF forcée, création des répertoires parents.
+- Nouveau type public `ReportEnvironment` (record) : porte les métadonnées
+  d'environnement (chemin du fichier source, horodatage, version produit,
+  exercice) que le Core ne connaît pas par construction.
+- CLI : option `--output-md <chemin>` qui écrit le rapport Markdown finalisé.
+- CLI : option `--output-json <chemin>` qui écrit le rapport JSON v1.
+- Console : section « Synthèse » ajoutée (compteurs par sévérité et par
+  famille) avant la liste détaillée des anomalies.
+- `docs/json-schema.md` : contrat figé du JSON v1 (toute évolution non
+  additive incrémentera `schemaVersion`).
+- `docs/rapport-exemple.md` : exemple de rapport Markdown produit par l'outil
+  sur un FEC fictif (cf. cadrage §7.2).
+- 16 tests xUnit additionnels :
+  - `JsonReportWriterTests` (7 tests) : `schemaVersion`, camelCase, omission
+    `null`, cohérence synthèse / anomalies, exposition exercice.
+  - `MarkdownReportWriterTests` (7 tests) : verdict en bandeau, sections par
+    famille présentes uniquement si non vides, pied de page, fins de ligne LF.
+  - `ReportFileWriterTests` (4 tests, fixtures temporaires) : UTF-8 sans BOM,
+    création des répertoires parents, écrasement d'un fichier existant.
+- `global.json` à la racine du repo : épingle la bande SDK `.NET 8.0.x`
+  (`rollForward: latestFeature`) pour des builds reproductibles avant la
+  migration vers .NET 10 LTS prévue fin 2026 (Data Context §3.1).
+
+### Modifié
+- `FecCheckInfo.Version` passe de `0.3.0` à `0.4.0`.
+- `Program.cs` : parser d'arguments étendu (`--output-md`, `--output-json`),
+  bloc d'aide `--help` réécrit pour documenter les nouveaux flags. Si une
+  écriture de rapport fichier échoue, l'erreur est tracée sur `stderr` et le
+  code de retour devient `3` ; le verdict reste affiché en console.
+- Aide console : la mention du flag `--output-md` / `--output-json` apparaît
+  en plus de `--exercice`.
+
+### Dépendances
+- Aucune nouvelle dépendance NuGet ajoutée. La sérialisation JSON s'appuie
+  uniquement sur `System.Text.Json` (BCL .NET 8) en mode source generation.
 
 ## [0.3.0] — 2026-04-28
 
