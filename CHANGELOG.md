@@ -7,9 +7,44 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 ## [Non publié]
 
 ### À venir
-- **J3 (`v0.3.0`)** — Famille C : cohérence temporelle (format des dates `AAAAMMJJ`, écritures dans la période d'exercice, `ValidDate >= EcritureDate`, chronologie par journal, signalement des écritures non validées).
 - **J4 (`v0.4.0`)** — Rapport Markdown finalisé, rapport JSON (schéma versionné), affinage des codes de retour processus.
 - **J5 (`v1.0.0`)** — Pipeline de release multi-OS, premiers binaires self-contained publiés (Windows x64, Linux x64, macOS).
+
+## [0.3.0] — 2026-04-28
+
+Jalon **J3** clos : la Famille C (cohérence temporelle) est entièrement
+opérationnelle. À ce stade, `fec-check <chemin>` détecte vingt-et-un
+types d'anomalies (sept de format, six de cohérence comptable, huit de
+cohérence temporelle) et accepte une option `--exercice` pour valider la
+période d'exercice.
+
+### Ajouté
+- Règles C01 à C08 (Famille C — Cohérence temporelle) implémentées et couvertes par tests :
+  - **C01** (Erreur) — `EcritureDate` au format `AAAAMMJJ` strict (8 chiffres formant une date valide du calendrier).
+  - **C02** (Erreur) — `PieceDate` au format `AAAAMMJJ` strict si rempli.
+  - **C03** (Erreur) — `ValidDate` au format `AAAAMMJJ` strict si rempli.
+  - **C04** (Erreur) — `DateLet` au format `AAAAMMJJ` strict si rempli.
+  - **C05** (Erreur) — Toute `EcritureDate` doit appartenir à la période d'exercice fournie via l'option `--exercice` ; règle non évaluée si l'option n'est pas fournie.
+  - **C06** (Erreur) — `ValidDate` postérieure ou égale à `EcritureDate` quand les deux sont remplies.
+  - **C07** (Erreur) — Au sein d'un journal, les écritures validées (`ValidDate` non vide) doivent avoir une `EcritureDate` croissante quand on les trie par `EcritureNum` (lex).
+  - **C08** (Avertissement) — Finding agrégé recensant les écritures sans `ValidDate` (avec échantillon des 10 premières).
+- Nouveau type public `ExercicePeriod` (record) exposé par le Core, avec fabrique `Create(debut, fin)` qui rejette les bornes incohérentes et méthode `Contains(date)` (bornes incluses).
+- Nouvelle classe interne `TemporalContext` qui porte l'état nécessaire aux règles C05/C07/C08 (agrégateur d'écritures avec `EcritureDate` parsable + drapeau `AAuMoinsUneLigneValidee`). Empreinte mémoire en *O(nombre d'écritures distinctes)*, miroir de `AccountingContext`.
+- Nouvelle classe interne `FecDateParser` : parseur strict `AAAAMMJJ` partagé par `DataLineValidator` (C01-C04, C06) et `TemporalContext` (C05, C07).
+- 8 fixtures pathologiques (`tests/fixtures/non-conforme/temporel/`), une par règle, avec README expliquant l'anomalie injectée.
+- 11 tests xUnit C01-C08 + couplages (conforme avec exercice, sans exercice, invariants `ExercicePeriod`).
+- Option CLI `--exercice <debut>:<fin>` au format `YYYY-MM-DD:YYYY-MM-DD` (séparateur `:`, bornes incluses). Le rapport indique explicitement quand C05 n'a pas été évaluée faute d'option.
+
+### Modifié
+- `FecCheckInfo.Version` passe de `0.2.0` à `0.3.0`.
+- Catalogue `Rules.All` étendu : 21 règles désormais (A01-A07 + B01-B06 + C01-C08).
+- `FecValidator` expose désormais 4 surcharges publiques : `Validate(string)`, `Validate(string, ExercicePeriod?)`, `Validate(Stream)`, `Validate(Stream, ExercicePeriod?)`. Les surcharges sans `ExercicePeriod` délèguent à celles avec `null` (compatibilité ascendante J1/J2 préservée).
+- CLI : la ligne d'aide « règles couvertes » mentionne maintenant les Familles A, B et C ; le bloc de caractéristiques du fichier affiche soit la période fournie, soit la mention « non précisé (règle C05 non évaluée — utilisez --exercice <debut>:<fin> pour l'activer). ».
+- `RulesCatalogTests` : sévérités C01-C08 ajoutées au théorème d'alignement avec `docs/regles.md` ; nouveau test `All_FamilleC_EstTemporal`.
+
+### Dépendances
+- Aucune nouvelle dépendance NuGet ajoutée. La Famille C est implémentée
+  avec la BCL .NET 8 uniquement (`System.Globalization` pour `DateOnly.TryParseExact`).
 
 ## [0.2.0] — 2026-04-27
 

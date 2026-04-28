@@ -2,7 +2,7 @@
 
 > Validateur de **Fichier des Écritures Comptables** (FEC) pour les TPE et PME françaises.
 > Ligne de commande, déterministe, sans réseau, en français.
-> Statut : **v0.2.0 — Familles A (format) et B (cohérence comptable) opérationnelles (J2)**. Famille C au jalon suivant (cf. [`CHANGELOG.md`](CHANGELOG.md)).
+> Statut : **v0.3.0 — Familles A (format), B (cohérence comptable) et C (cohérence temporelle) opérationnelles (J3)**. Rapport JSON et binaires multi-OS aux jalons suivants (cf. [`CHANGELOG.md`](CHANGELOG.md)).
 
 ---
 
@@ -75,11 +75,14 @@ Les projets `Cli` et `Tests` n'ajoutent aucune dépendance tierce supplémentair
 
 ## Usage
 
-À partir de **v0.2.0**, le binaire valide les Familles A (format) et B (cohérence comptable) et imprime un rapport console structuré en français. Les options `--output rapport.md` et `--json rapport.json` arriveront au jalon J4.
+À partir de **v0.3.0**, le binaire valide les Familles A (format), B (cohérence comptable) et C (cohérence temporelle), et imprime un rapport console structuré en français. Les options `--output rapport.md` et `--json rapport.json` arriveront au jalon J4.
 
 ```bash
 # Validation d'un FEC, rapport sur la sortie standard
 fec-check chemin/vers/mon-fec.txt
+
+# Validation avec contrôle de la période d'exercice (règle C05)
+fec-check --exercice 2024-01-01:2024-12-31 chemin/vers/mon-fec.txt
 
 # Aide
 fec-check --help
@@ -173,8 +176,8 @@ fec-check/
 |---|---|---|
 | **J0** | Repo, README, structure, CI minimale, LICENSE, fixture conforme | livré (`v0.0.0`) |
 | **J1** | Famille A — conformité de format | livré (`v0.1.0`) |
-| **J2** | Famille B — cohérence comptable | **livré (`v0.2.0`)** |
-| **J3** | Famille C — cohérence temporelle | à venir (`v0.3.0`) |
+| **J2** | Famille B — cohérence comptable | livré (`v0.2.0`) |
+| **J3** | Famille C — cohérence temporelle | **livré (`v0.3.0`)** |
 | **J4** | Rapport Markdown finalisé, rapport JSON, codes de retour | à venir (`v0.4.0`) |
 | **J5** | Pipeline release multi-OS, premiers binaires publiés | à venir (`v1.0.0`) |
 

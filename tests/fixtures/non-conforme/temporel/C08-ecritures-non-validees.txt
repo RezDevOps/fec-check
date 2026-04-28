@@ -1,0 +1,5 @@
+JournalCode	JournalLib	EcritureNum	EcritureDate	CompteNum	CompteLib	CompAuxNum	CompAuxLib	PieceRef	PieceDate	EcritureLib	Debit	Credit	EcritureLet	DateLet	ValidDate	Montantdevise	Idevise
+AC	Achats	AC0001	20240115	607000	Achats marchandises			FA0001	20240115	Achat 1	100,00	0,00					
+AC	Achats	AC0001	20240115	512000	Banque BNP			FA0001	20240115	Achat 1	0,00	100,00					
+AC	Achats	AC0002	20240210	607000	Achats marchandises			FA0002	20240210	Achat 2	200,00	0,00					
+AC	Achats	AC0002	20240210	512000	Banque BNP			FA0002	20240210	Achat 2	0,00	200,00					

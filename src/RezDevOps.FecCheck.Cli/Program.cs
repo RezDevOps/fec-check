@@ -1,5 +1,6 @@
 // © 2026 Rudy Rezaire / RezDevOps. Licence MIT — voir LICENSE.
 
+using System.Globalization;
 using System.Text;
 using RezDevOps.FecCheck.Core;
 
@@ -19,22 +20,19 @@ if (args[0] is "--version")
     return 0;
 }
 
-// Argument unique attendu à J1 : le chemin du FEC à analyser. Les options
-// --output / --json arriveront au jalon J4 ; on les rejette explicitement
-// pour ne pas laisser croire qu'elles sont silencieusement ignorées.
-if (args[0].StartsWith('-'))
+// Parsing des arguments : on accepte l'option `--exercice <debut>:<fin>` en
+// plus du chemin positionnel obligatoire. Toute autre option déclenche EX_USAGE.
+if (!TryParseArgs(args, out var path, out var exercice, out var argsError))
 {
-    Console.Error.WriteLine($"{FecCheckInfo.ProductName} : option « {args[0]} » non reconnue.");
+    Console.Error.WriteLine($"{FecCheckInfo.ProductName} : {argsError}");
     Console.Error.WriteLine("Utilisez --help pour afficher l'usage.");
     return 64; // EX_USAGE
 }
 
-var path = args[0];
-
 try
 {
-    var report = FecValidator.Validate(path);
-    PrintReport(path, report);
+    var report = FecValidator.Validate(path, exercice);
+    PrintReport(path, report, exercice);
     return MapVerdictToExitCode(report.Verdict);
 }
 catch (FileNotFoundException ex)
@@ -58,11 +56,14 @@ static void PrintUsage()
     Console.WriteLine($"{FecCheckInfo.ProductName} — validateur de Fichier des Écritures Comptables (FEC).");
     Console.WriteLine();
     Console.WriteLine("Usage :");
-    Console.WriteLine("  fec-check <chemin-vers-fec>");
+    Console.WriteLine("  fec-check [--exercice <debut>:<fin>] <chemin-vers-fec>");
     Console.WriteLine();
     Console.WriteLine("Options :");
-    Console.WriteLine("  -h, --help       Affiche cette aide.");
-    Console.WriteLine("      --version    Affiche la version.");
+    Console.WriteLine("  -h, --help                       Affiche cette aide.");
+    Console.WriteLine("      --version                    Affiche la version.");
+    Console.WriteLine("      --exercice <debut>:<fin>     Période d'exercice contre laquelle valider EcritureDate (règle C05).");
+    Console.WriteLine("                                   Format : YYYY-MM-DD:YYYY-MM-DD (bornes incluses).");
+    Console.WriteLine("                                   Ex : --exercice 2024-01-01:2024-12-31");
     Console.WriteLine();
     Console.WriteLine("Codes de retour :");
     Console.WriteLine("  0   Conforme.");
@@ -71,11 +72,101 @@ static void PrintUsage()
     Console.WriteLine("  3   Erreur d'exécution.");
     Console.WriteLine("  64  Usage incorrect.");
     Console.WriteLine();
-    Console.WriteLine($"Version : {FecCheckInfo.Version} — règles couvertes : Famille A (format) + Famille B (cohérence comptable).");
+    Console.WriteLine($"Version : {FecCheckInfo.Version} — règles couvertes : Famille A (format) + Famille B (cohérence comptable) + Famille C (cohérence temporelle).");
     Console.WriteLine("Documentation : https://github.com/RezDevOps/fec-check");
 }
 
-static void PrintReport(string path, ValidationReport report)
+static bool TryParseArgs(
+    string[] args,
+    out string path,
+    out ExercicePeriod? exercice,
+    out string error)
+{
+    path = string.Empty;
+    exercice = null;
+    error = string.Empty;
+    string? pathFound = null;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        var a = args[i];
+        if (a is "--exercice")
+        {
+            if (i + 1 >= args.Length)
+            {
+                error = "option --exercice : argument manquant (format attendu : YYYY-MM-DD:YYYY-MM-DD).";
+                return false;
+            }
+
+            i++;
+            if (!TryParseExercice(args[i], out exercice, out var exerciceError))
+            {
+                error = $"option --exercice : {exerciceError}";
+                return false;
+            }
+        }
+        else if (a.Length > 0 && a[0] == '-')
+        {
+            error = $"option « {a} » non reconnue.";
+            return false;
+        }
+        else
+        {
+            if (pathFound is not null)
+            {
+                error = "un seul chemin de fichier est accepté.";
+                return false;
+            }
+
+            pathFound = a;
+        }
+    }
+
+    if (pathFound is null)
+    {
+        error = "chemin du FEC manquant.";
+        return false;
+    }
+
+    path = pathFound;
+    return true;
+}
+
+static bool TryParseExercice(string raw, out ExercicePeriod? exercice, out string error)
+{
+    exercice = null;
+    error = string.Empty;
+
+    var parts = raw.Split(':');
+    if (parts.Length != 2)
+    {
+        error = $"format invalide « {raw} », attendu : YYYY-MM-DD:YYYY-MM-DD.";
+        return false;
+    }
+
+    if (!DateOnly.TryParseExact(parts[0], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var debut))
+    {
+        error = $"date de début invalide « {parts[0]} », format attendu YYYY-MM-DD.";
+        return false;
+    }
+
+    if (!DateOnly.TryParseExact(parts[1], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fin))
+    {
+        error = $"date de fin invalide « {parts[1]} », format attendu YYYY-MM-DD.";
+        return false;
+    }
+
+    if (debut > fin)
+    {
+        error = $"la date de début ({parts[0]}) est postérieure à la date de fin ({parts[1]}).";
+        return false;
+    }
+
+    exercice = ExercicePeriod.Create(debut, fin);
+    return true;
+}
+
+static void PrintReport(string path, ValidationReport report, ExercicePeriod? exercice)
 {
     Console.WriteLine();
     Console.WriteLine($"{FecCheckInfo.ProductName} {FecCheckInfo.Version} — analyse de « {path} »");
@@ -86,6 +177,16 @@ static void PrintReport(string path, ValidationReport report)
     Console.WriteLine($"  Séparateur   : {DescribeSeparator(report.SeparateurDetecte)}");
     Console.WriteLine($"  Fin de ligne : {DescribeLineEnding(report.FinDeLigneDetectee)}");
     Console.WriteLine($"  Lignes lues  : {report.LignesLues}");
+    if (exercice is not null)
+    {
+        Console.WriteLine(
+            $"  Exercice     : du {exercice.Debut:yyyy-MM-dd} au {exercice.Fin:yyyy-MM-dd}");
+    }
+    else
+    {
+        Console.WriteLine("  Exercice     : non précisé (règle C05 non évaluée — utilisez --exercice <debut>:<fin> pour l'activer).");
+    }
+
     Console.WriteLine();
 
     Console.WriteLine($"Verdict : {DescribeVerdict(report.Verdict)}");

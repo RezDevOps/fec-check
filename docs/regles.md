@@ -47,14 +47,14 @@ Vérifie l'irréversibilité de la comptabilité.
 
 | ID | Règle | Sévérité | Source | Jalon | État |
 |---|---|---|---|---|---|
-| C01 | `EcritureDate` au format `AAAAMMJJ` strict (8 chiffres, date valide) | Erreur | A. 47 A-1 LPF | J3 | — |
-| C02 | `PieceDate` au format `AAAAMMJJ` strict si rempli | Erreur | A. 47 A-1 LPF | J3 | — |
-| C03 | `ValidDate` au format `AAAAMMJJ` strict si rempli | Erreur | A. 47 A-1 LPF | J3 | — |
-| C04 | `DateLet` au format `AAAAMMJJ` strict si rempli | Erreur | A. 47 A-1 LPF | J3 | — |
-| C05 | Toutes les `EcritureDate` dans la période d'exercice déclarée (option `--exercice`) | Erreur | BOI-CF-IOR-60-40-20 | J3 | — |
-| C06 | `ValidDate` postérieure ou égale à `EcritureDate` quand les deux sont remplies | Erreur | Doctrine fiscale | J3 | — |
-| C07 | Numérotation chronologique des écritures **validées** au sein d'un même journal (croissance de `EcritureDate` selon `EcritureNum` parmi les écritures avec `ValidDate` non vide) | Erreur | BOI-CF-IOR-60-40-20 (irréversibilité) | J3 | — |
-| C08 | Signalement des écritures sans `ValidDate` (non validées) | Avertissement | BOI-CF-IOR-60-40-20 | J3 | — |
+| C01 | `EcritureDate` au format `AAAAMMJJ` strict (8 chiffres, date valide) | Erreur | A. 47 A-1 LPF | J3 | ✓ v0.3.0 |
+| C02 | `PieceDate` au format `AAAAMMJJ` strict si rempli | Erreur | A. 47 A-1 LPF | J3 | ✓ v0.3.0 |
+| C03 | `ValidDate` au format `AAAAMMJJ` strict si rempli | Erreur | A. 47 A-1 LPF | J3 | ✓ v0.3.0 |
+| C04 | `DateLet` au format `AAAAMMJJ` strict si rempli | Erreur | A. 47 A-1 LPF | J3 | ✓ v0.3.0 |
+| C05 | Toutes les `EcritureDate` dans la période d'exercice déclarée (option `--exercice`) | Erreur | BOI-CF-IOR-60-40-20 | J3 | ✓ v0.3.0 |
+| C06 | `ValidDate` postérieure ou égale à `EcritureDate` quand les deux sont remplies | Erreur | Doctrine fiscale | J3 | ✓ v0.3.0 |
+| C07 | Numérotation chronologique des écritures **validées** au sein d'un même journal (croissance de `EcritureDate` selon `EcritureNum` parmi les écritures avec `ValidDate` non vide) | Erreur | BOI-CF-IOR-60-40-20 (irréversibilité) | J3 | ✓ v0.3.0 |
+| C08 | Signalement des écritures sans `ValidDate` (non validées) | Avertissement | BOI-CF-IOR-60-40-20 | J3 | ✓ v0.3.0 |
 
 ---
 

@@ -127,6 +127,72 @@ public static class Rules
         Libelle: "Si CompAuxNum est rempli, alors CompteNum commence par '4' (compte de tiers — racines 401, 411, 421, 425, etc.).",
         Source: "PCG");
 
+    // --- Famille C — Cohérence temporelle (J3) -----------------------------
+
+    /// <summary>C01 — EcritureDate au format AAAAMMJJ strict (8 chiffres, date valide).</summary>
+    public static readonly Rule C01 = new(
+        Id: "C01",
+        Famille: RuleFamily.Temporal,
+        Severity: Severity.Erreur,
+        Libelle: "EcritureDate au format AAAAMMJJ strict (8 chiffres, date valide).",
+        Source: "A. 47 A-1 LPF");
+
+    /// <summary>C02 — PieceDate au format AAAAMMJJ strict si rempli.</summary>
+    public static readonly Rule C02 = new(
+        Id: "C02",
+        Famille: RuleFamily.Temporal,
+        Severity: Severity.Erreur,
+        Libelle: "PieceDate au format AAAAMMJJ strict si rempli.",
+        Source: "A. 47 A-1 LPF");
+
+    /// <summary>C03 — ValidDate au format AAAAMMJJ strict si rempli.</summary>
+    public static readonly Rule C03 = new(
+        Id: "C03",
+        Famille: RuleFamily.Temporal,
+        Severity: Severity.Erreur,
+        Libelle: "ValidDate au format AAAAMMJJ strict si rempli.",
+        Source: "A. 47 A-1 LPF");
+
+    /// <summary>C04 — DateLet au format AAAAMMJJ strict si rempli.</summary>
+    public static readonly Rule C04 = new(
+        Id: "C04",
+        Famille: RuleFamily.Temporal,
+        Severity: Severity.Erreur,
+        Libelle: "DateLet au format AAAAMMJJ strict si rempli.",
+        Source: "A. 47 A-1 LPF");
+
+    /// <summary>C05 — Toutes les EcritureDate dans la période d'exercice déclarée (option --exercice).</summary>
+    public static readonly Rule C05 = new(
+        Id: "C05",
+        Famille: RuleFamily.Temporal,
+        Severity: Severity.Erreur,
+        Libelle: "Toutes les EcritureDate dans la période d'exercice déclarée (option --exercice).",
+        Source: "BOI-CF-IOR-60-40-20");
+
+    /// <summary>C06 — ValidDate postérieure ou égale à EcritureDate quand les deux sont remplies.</summary>
+    public static readonly Rule C06 = new(
+        Id: "C06",
+        Famille: RuleFamily.Temporal,
+        Severity: Severity.Erreur,
+        Libelle: "ValidDate postérieure ou égale à EcritureDate quand les deux sont remplies.",
+        Source: "Doctrine fiscale");
+
+    /// <summary>C07 — Numérotation chronologique des écritures validées au sein d'un même journal.</summary>
+    public static readonly Rule C07 = new(
+        Id: "C07",
+        Famille: RuleFamily.Temporal,
+        Severity: Severity.Erreur,
+        Libelle: "Numérotation chronologique des écritures validées au sein d'un même journal (croissance d'EcritureDate selon EcritureNum parmi les écritures avec ValidDate non vide).",
+        Source: "BOI-CF-IOR-60-40-20 (irréversibilité)");
+
+    /// <summary>C08 — Signalement des écritures sans ValidDate (non validées).</summary>
+    public static readonly Rule C08 = new(
+        Id: "C08",
+        Famille: RuleFamily.Temporal,
+        Severity: Severity.Avertissement,
+        Libelle: "Signalement des écritures sans ValidDate (non validées).",
+        Source: "BOI-CF-IOR-60-40-20");
+
     /// <summary>
     /// Toutes les règles connues du catalogue, dans l'ordre de leur identifiant.
     /// Utilisable pour générer la documentation, la liste --list-rules du CLI,
@@ -136,5 +202,6 @@ public static class Rules
     {
         A01, A02, A03, A04, A05, A06, A07,
         B01, B02, B03, B04, B05, B06,
+        C01, C02, C03, C04, C05, C06, C07, C08,
     };
 }

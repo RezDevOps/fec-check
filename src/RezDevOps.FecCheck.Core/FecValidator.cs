@@ -5,8 +5,8 @@ namespace RezDevOps.FecCheck.Core;
 /// <summary>
 /// Point d'entrée public de la bibliothèque. Orchestre la validation d'un FEC
 /// en streaming : détection d'encodage, lecture ligne par ligne, application
-/// des règles des Familles A (J1) et B (J2). La Famille C (J3) viendra se
-/// brancher ici sans casser l'API.
+/// des règles des Familles A (J1), B (J2) et C (J3). L'option <c>--exercice</c>
+/// est portée jusqu'ici via <see cref="ExercicePeriod"/>.
 /// </summary>
 /// <remarks>
 /// Cette classe est sans état : elle expose des méthodes statiques. Aucun I/O
@@ -17,13 +17,25 @@ namespace RezDevOps.FecCheck.Core;
 public static class FecValidator
 {
     /// <summary>
-    /// Valide un FEC à partir de son chemin sur disque. Ouvre le fichier en
-    /// lecture partagée et délègue à <see cref="Validate(Stream)"/>.
+    /// Valide un FEC à partir de son chemin sur disque, sans contrainte
+    /// d'exercice (la règle <see cref="Rules.C05"/> n'est pas évaluée).
+    /// Surcharge de compatibilité avec l'API J1/J2.
     /// </summary>
     /// <param name="filePath">Chemin absolu ou relatif vers le FEC à analyser.</param>
     /// <exception cref="FileNotFoundException">Si le fichier n'existe pas.</exception>
     /// <exception cref="UnauthorizedAccessException">Si le fichier n'est pas lisible.</exception>
-    public static ValidationReport Validate(string filePath)
+    public static ValidationReport Validate(string filePath) =>
+        Validate(filePath, exercice: null);
+
+    /// <summary>
+    /// Valide un FEC à partir de son chemin sur disque. Ouvre le fichier en
+    /// lecture partagée et délègue à <see cref="Validate(Stream, ExercicePeriod?)"/>.
+    /// </summary>
+    /// <param name="filePath">Chemin absolu ou relatif vers le FEC à analyser.</param>
+    /// <param name="exercice">Période d'exercice pour la règle C05, ou <c>null</c> pour ne pas l'évaluer.</param>
+    /// <exception cref="FileNotFoundException">Si le fichier n'existe pas.</exception>
+    /// <exception cref="UnauthorizedAccessException">Si le fichier n'est pas lisible.</exception>
+    public static ValidationReport Validate(string filePath, ExercicePeriod? exercice)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         if (!File.Exists(filePath))
@@ -39,15 +51,25 @@ public static class FecValidator
             bufferSize: 4096,
             FileOptions.SequentialScan);
 
-        return Validate(stream);
+        return Validate(stream, exercice);
     }
+
+    /// <summary>
+    /// Valide un FEC à partir d'un flux, sans contrainte d'exercice (la règle
+    /// <see cref="Rules.C05"/> n'est pas évaluée). Surcharge de compatibilité
+    /// avec l'API J1/J2.
+    /// </summary>
+    /// <param name="input">Flux du FEC, seekable.</param>
+    public static ValidationReport Validate(Stream input) =>
+        Validate(input, exercice: null);
 
     /// <summary>
     /// Valide un FEC à partir d'un flux ouvert en lecture, seekable. Le flux
     /// n'est pas disposé par la méthode — la responsabilité reste à l'appelant.
     /// </summary>
     /// <param name="input">Flux du FEC, seekable.</param>
-    public static ValidationReport Validate(Stream input)
+    /// <param name="exercice">Période d'exercice pour la règle C05, ou <c>null</c> pour ne pas l'évaluer.</param>
+    public static ValidationReport Validate(Stream input, ExercicePeriod? exercice)
     {
         ArgumentNullException.ThrowIfNull(input);
 
@@ -143,6 +165,7 @@ public static class FecValidator
             : SeparatorDetector.Tabulation;
 
         var accounting = new AccountingContext();
+        var temporal = new TemporalContext(exercice);
 
         while (reader.TryReadLine(out var line))
         {
@@ -157,22 +180,26 @@ public static class FecValidator
                         + $"(« {Describe(separator.Value)} » attendu, « {Describe(alternativeSeparator)} » trouvé).",
                     Contexte: line));
 
-                // On n'évalue pas A05/A07/Famille B sur une ligne au mauvais
+                // On n'évalue pas A05/A07/Famille B/C sur une ligne au mauvais
                 // séparateur : les findings seraient redondants et trompeurs.
                 continue;
             }
 
-            // Le split est fait une seule fois et partagé entre les deux
-            // évaluateurs (par-ligne et inter-lignes), conformément à la
-            // contrainte de perf §6.3 du cadrage.
+            // Le split est fait une seule fois et partagé entre les trois
+            // évaluateurs (par-ligne, comptable inter-lignes, temporel
+            // inter-lignes), conformément à la contrainte de perf §6.3 du cadrage.
             var fields = line.Split(separator.Value);
 
             DataLineValidator.Validate(fields, line, reader.LineNumber, findings);
             accounting.Observe(fields, reader.LineNumber, findings);
+            temporal.Observe(fields, reader.LineNumber, findings);
         }
 
         // -- Famille B agrégée — B01 (équilibre par écriture) + B02 (global) -
         accounting.EmitFinalFindings(findings);
+
+        // -- Famille C agrégée — C05 (hors exercice) + C07 (chronologie) + C08 (non validées) --
+        temporal.EmitFinalFindings(findings);
 
         // -- A06 — cohérence des fins de ligne -------------------------------
         var detectedEol = reader.GetDetectedLineEnding();

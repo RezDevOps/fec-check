@@ -52,6 +52,30 @@ internal static class TestFixtures
     /// <summary>Fixture pour <see cref="Rules.B06"/> (CompAuxNum attaché à un compte non-tiers).</summary>
     public static string B06_CompAuxSurCompteNonTiers => Path("non-conforme", "comptable", "B06-compaux-sur-compte-non-tiers.txt");
 
+    /// <summary>Fixture pour <see cref="Rules.C01"/> (EcritureDate au mauvais format).</summary>
+    public static string C01_EcritureDateInvalide => Path("non-conforme", "temporel", "C01-ecriture-date-invalide.txt");
+
+    /// <summary>Fixture pour <see cref="Rules.C02"/> (PieceDate au mauvais format).</summary>
+    public static string C02_PieceDateInvalide => Path("non-conforme", "temporel", "C02-piece-date-invalide.txt");
+
+    /// <summary>Fixture pour <see cref="Rules.C03"/> (ValidDate au mauvais format).</summary>
+    public static string C03_ValidDateInvalide => Path("non-conforme", "temporel", "C03-valid-date-invalide.txt");
+
+    /// <summary>Fixture pour <see cref="Rules.C04"/> (DateLet au mauvais format).</summary>
+    public static string C04_DateLetInvalide => Path("non-conforme", "temporel", "C04-date-let-invalide.txt");
+
+    /// <summary>Fixture pour <see cref="Rules.C05"/> (EcritureDate hors période d'exercice).</summary>
+    public static string C05_HorsPeriodeExercice => Path("non-conforme", "temporel", "C05-hors-periode-exercice.txt");
+
+    /// <summary>Fixture pour <see cref="Rules.C06"/> (ValidDate antérieure à EcritureDate).</summary>
+    public static string C06_ValidationAnterieureEcriture => Path("non-conforme", "temporel", "C06-validation-anterieure-ecriture.txt");
+
+    /// <summary>Fixture pour <see cref="Rules.C07"/> (chronologie cassée dans un journal).</summary>
+    public static string C07_ChronologieCassee => Path("non-conforme", "temporel", "C07-chronologie-cassee.txt");
+
+    /// <summary>Fixture pour <see cref="Rules.C08"/> (deux écritures sans ValidDate).</summary>
+    public static string C08_EcrituresNonValidees => Path("non-conforme", "temporel", "C08-ecritures-non-validees.txt");
+
     private static string Path(params string[] parts) =>
         System.IO.Path.Combine(
             new[] { AppContext.BaseDirectory, "fixtures" }

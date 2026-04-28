@@ -13,7 +13,9 @@ namespace RezDevOps.FecCheck.Core;
 /// <item><description><see cref="Rules.B03"/> — forme par-ligne du montant : motif <c>^-?\d+([,.]\d{0,4})?$</c>, sans séparateur de milliers ni notation scientifique. La cohérence du séparateur décimal entre les lignes est gérée par <see cref="AccountingContext"/>.</description></item>
 /// <item><description><see cref="Rules.B04"/> — mutuelle exclusion <c>Debit</c>/<c>Credit</c> non nuls sur la même ligne (avertissement) ;</description></item>
 /// <item><description><see cref="Rules.B05"/> — <c>CompAuxNum</c> et <c>CompAuxLib</c> remplis ensemble ou tous les deux vides ;</description></item>
-/// <item><description><see cref="Rules.B06"/> — un compte auxiliaire implique un <c>CompteNum</c> commençant par <c>'4'</c> (compte de tiers).</description></item>
+/// <item><description><see cref="Rules.B06"/> — un compte auxiliaire implique un <c>CompteNum</c> commençant par <c>'4'</c> (compte de tiers) ;</description></item>
+/// <item><description><see cref="Rules.C01"/>..<see cref="Rules.C04"/> — format <c>AAAAMMJJ</c> strict des champs date (<c>EcritureDate</c>, <c>PieceDate</c>, <c>ValidDate</c>, <c>DateLet</c>) ;</description></item>
+/// <item><description><see cref="Rules.C06"/> — <c>ValidDate</c> postérieure ou égale à <c>EcritureDate</c> quand les deux sont parsables.</description></item>
 /// </list>
 /// </summary>
 /// <remarks>
@@ -31,9 +33,12 @@ internal static class DataLineValidator
     private const int IdxCompteNum = 4;
     private const int IdxCompAuxNum = 6;
     private const int IdxCompAuxLib = 7;
+    private const int IdxPieceDate = 9;
     private const int IdxEcritureLib = 10;
     private const int IdxDebit = 11;
     private const int IdxCredit = 12;
+    private const int IdxDateLet = 14;
+    private const int IdxValidDate = 15;
 
     private static readonly (int Index, string Nom)[] ChampsObligatoiresNonVides =
     {
@@ -175,6 +180,74 @@ internal static class DataLineValidator
                         + $"au compte « {compteNum} », qui n'est pas un compte de tiers (racine PCG attendue : 4xxxxx).",
                     Contexte: rawLine));
             }
+        }
+
+        // C01 — EcritureDate au format AAAAMMJJ strict (uniquement si rempli ;
+        // le cas « vide » est déjà couvert par A07 sur ce champ obligatoire,
+        // pour ne pas remonter deux findings sur la même cause).
+        var ecritureDateRaw = IdxEcritureDate < fields.Length ? fields[IdxEcritureDate] : string.Empty;
+        if (FecDateParser.IsFilledButInvalid(ecritureDateRaw))
+        {
+            sink.Add(new Finding(
+                Rule: Rules.C01,
+                LineNumber: lineNumber,
+                Message:
+                    $"Ligne {lineNumber} : EcritureDate « {ecritureDateRaw.Trim()} » n'est pas au format AAAAMMJJ "
+                    + "(8 chiffres formant une date valide du calendrier).",
+                Contexte: rawLine));
+        }
+
+        // C02 — PieceDate au format AAAAMMJJ strict si rempli.
+        var pieceDateRaw = IdxPieceDate < fields.Length ? fields[IdxPieceDate] : string.Empty;
+        if (FecDateParser.IsFilledButInvalid(pieceDateRaw))
+        {
+            sink.Add(new Finding(
+                Rule: Rules.C02,
+                LineNumber: lineNumber,
+                Message:
+                    $"Ligne {lineNumber} : PieceDate « {pieceDateRaw.Trim()} » n'est pas au format AAAAMMJJ.",
+                Contexte: rawLine));
+        }
+
+        // C03 — ValidDate au format AAAAMMJJ strict si rempli.
+        var validDateRaw = IdxValidDate < fields.Length ? fields[IdxValidDate] : string.Empty;
+        if (FecDateParser.IsFilledButInvalid(validDateRaw))
+        {
+            sink.Add(new Finding(
+                Rule: Rules.C03,
+                LineNumber: lineNumber,
+                Message:
+                    $"Ligne {lineNumber} : ValidDate « {validDateRaw.Trim()} » n'est pas au format AAAAMMJJ.",
+                Contexte: rawLine));
+        }
+
+        // C04 — DateLet au format AAAAMMJJ strict si rempli.
+        var dateLetRaw = IdxDateLet < fields.Length ? fields[IdxDateLet] : string.Empty;
+        if (FecDateParser.IsFilledButInvalid(dateLetRaw))
+        {
+            sink.Add(new Finding(
+                Rule: Rules.C04,
+                LineNumber: lineNumber,
+                Message:
+                    $"Ligne {lineNumber} : DateLet « {dateLetRaw.Trim()} » n'est pas au format AAAAMMJJ.",
+                Contexte: rawLine));
+        }
+
+        // C06 — ValidDate ≥ EcritureDate quand les deux sont remplies et
+        // parsables. Si l'une des deux est invalide, C01/C03 l'aura signalée
+        // séparément ; on s'abstient d'émettre un C06 fondé sur un champ cassé.
+        if (FecDateParser.TryParse(ecritureDateRaw, out var ecritureDate)
+            && FecDateParser.TryParse(validDateRaw, out var validDate)
+            && validDate < ecritureDate)
+        {
+            sink.Add(new Finding(
+                Rule: Rules.C06,
+                LineNumber: lineNumber,
+                Message:
+                    $"Ligne {lineNumber} : ValidDate ({validDateRaw.Trim()}) antérieure à "
+                    + $"EcritureDate ({ecritureDateRaw.Trim()}). Une écriture ne peut être validée "
+                    + "avant d'avoir été passée (irréversibilité de la comptabilité).",
+                Contexte: rawLine));
         }
     }
 
