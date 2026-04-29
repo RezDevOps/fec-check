@@ -8,6 +8,49 @@
     <!-- Nom de commande exposé : fec-check (cf. AssemblyName). -->
     <RollForward>LatestMajor</RollForward>
     <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!--
+      Native AOT (J5) — binaires self-contained légers (~5-10 Mo) à démarrage
+      instantané, sans JIT runtime embarqué. Activé via la propriété MSBuild
+      standard ; la CI release applique -r <RID> au moment du publish.
+
+      Pré-requis vérifiés dans le code :
+      - JSON : System.Text.Json en mode source generation (FecCheckJsonContext)
+        — aucun fallback réflexion.
+      - Encoding ISO-8859-15 : System.Text.Encoding.CodePages 8.x est annoncé
+        AOT-compatible par Microsoft. Validation en CI par le job aot-smoke
+        (build.yml) qui exécute le binaire publié sur une fixture conforme.
+      - Globalization : InvariantGlobalization=true — toutes les analyses de
+        date utilisent CultureInfo.InvariantCulture.
+      - Aucune réflexion explicite (pas d'Activator, pas de Type.GetType).
+
+      IsTrimmable=true expose les warnings IL2xxx/IL3xxx au build, ce qui
+      permet de faire échouer la CI si une régression introduit une dépendance
+      non-trimmable. PublishAot active aussi implicitement le trimming en publish.
+    -->
+    <PublishAot>true</PublishAot>
+    <IsTrimmable>true</IsTrimmable>
+
+    <!--
+      Optimise pour la taille du binaire (priorité sur la vitesse). Cohérent
+      avec un outil dont le hot path est limité au parsing FEC, qui passe
+      l'essentiel de son temps en I/O disque, pas en calcul CPU.
+    -->
+    <OptimizationPreference>Size</OptimizationPreference>
+
+    <!--
+      Désactive les frameworks d'instrumentation et de diagnostic dont l'outil
+      n'a pas l'usage. Réduit l'empreinte du binaire publié, sans impact
+      fonctionnel — le CLI ne fait pas d'HTTP, pas d'EventSource, pas de
+      métriques runtime.
+    -->
+    <DebuggerSupport>false</DebuggerSupport>
+    <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+    <EnableUnsafeUTF7Encoding>false</EnableUnsafeUTF7Encoding>
+    <EventSourceSupport>false</EventSourceSupport>
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+    <MetricsSupport>false</MetricsSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
   </PropertyGroup>
 
   <ItemGroup>

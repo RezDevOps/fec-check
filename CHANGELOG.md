@@ -6,8 +6,91 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
-### À venir
-- **J5 (`v1.0.0`)** — Pipeline de release multi-OS, premiers binaires self-contained publiés (Windows x64, Linux x64, macOS).
+_Aucun changement en attente. Prochain jalon non planifié à ce jour ; voir
+le cadrage `Agents IA/11_FEC_CHECK_CADRAGE.md` (§ critères de réussite) pour
+la suite (validation terrain sur un FEC client réel, puis itérations selon
+retours)._
+
+## [1.0.0] — 2026-04-29
+
+Jalon **J5** clos : `fec-check` est désormais distribuable. Le MVP est livré
+sous forme de binaires self-contained Native AOT pour les trois plateformes
+cibles, avec un pipeline de release reproductible, intègre et signé.
+
+À ce stade, un dirigeant TPE/PME peut télécharger une archive, vérifier son
+intégrité et son origine, et exécuter `fec-check` sur son fichier sans
+installer .NET ni faire confiance à un canal opaque. Les 21 règles des
+Familles A, B et C restent inchangées par rapport à `v0.4.0`.
+
+### Ajouté
+- Pipeline de release `.github/workflows/release.yml` :
+  - Déclenchement sur tag `v*` (et `workflow_dispatch` pour les dry-runs).
+  - Job `test` qui rejoue toute la suite xUnit en barrière de sortie.
+  - Matrice de build sur 3 RID : `win-x64` (windows-latest, ZIP),
+    `linux-x64` (ubuntu-latest, tar.gz), `osx-arm64` (macos-14, tar.gz).
+    Chaque RID est compilé sur son propre runner natif (la cross-compilation
+    AOT n'est pas supportée par .NET 8).
+  - Smoke test sur chaque binaire publié (`--version` doit répondre au format
+    attendu) avant upload de l'archive.
+  - Job `publish` final qui agrège les archives, génère un SBOM CycloneDX
+    via `dotnet-CycloneDX`, calcule un fichier `SHA256SUMS`, le signe via
+    sigstore (cosign keyless, OIDC GitHub), produit une attestation SLSA de
+    provenance (`actions/attest-build-provenance`) et publie la release
+    GitHub avec l'ensemble des artefacts.
+- Job `aot-smoke` ajouté à `.github/workflows/build.yml` : publie en
+  Native AOT pour `linux-x64` à chaque PR/push sur main et exécute le binaire
+  produit sur la fixture conforme. Garde-fou amont contre toute régression
+  qui casserait silencieusement le pipeline AOT (réflexion non maîtrisée,
+  warning IL2xxx promu en erreur, dépendance non-trimmable…).
+- `SECURITY.md` : politique de signalement (advisory privé GitHub ou
+  e-mail), périmètre de support, surface d'attaque documentée, procédures
+  de vérification SHA-256 + cosign.
+- `.github/release-notes-template.md` : en-tête générique des releases
+  GitHub (procédure de téléchargement et de vérification, table des codes
+  de retour). Le détail par version reste dans ce `CHANGELOG.md` pour ne
+  pas dupliquer l'information.
+- `README.md` : section « Installation » réécrite (téléchargement par
+  plateforme, vérification d'intégrité et de provenance, instructions de
+  build AOT depuis les sources).
+
+### Modifié
+- `FecCheckInfo.Version` passe de `0.4.0` à `1.0.0`.
+- `Directory.Build.props` : ajout de la propriété `<Version>1.0.0</Version>`
+  comme source de vérité unique pour l'assembly version. La CI release
+  surcharge via `-p:Version=$tag` au moment du publish.
+- `RezDevOps.FecCheck.Cli.csproj` : activation de Native AOT
+  (`PublishAot=true`, `IsTrimmable=true`, `OptimizationPreference=Size`),
+  désactivation des frameworks d'instrumentation non utilisés (Debugger,
+  EventSource, MetricsSupport, etc.) pour réduire l'empreinte du binaire
+  publié sans impact fonctionnel.
+- `RezDevOps.FecCheck.Core.csproj` : annoté `IsTrimmable=true` et
+  `IsAotCompatible=true`. Aucune modification de code source nécessaire :
+  l'assembly était déjà conçu trim-safe (JSON source-gen via
+  `FecCheckJsonContext`, pas de réflexion explicite, parsing de dates en
+  `CultureInfo.InvariantCulture`).
+- `README.md` : bandeau de statut promu à `v1.0.0`, ligne J5 du tableau
+  feuille de route marquée comme livrée.
+
+### Distribution
+- Binaires `self-contained` Native AOT publiés sur les Releases GitHub
+  pour les RID `win-x64`, `linux-x64`, `osx-arm64`. Chaque archive embarque
+  l'exécutable, le `README.md`, le `LICENSE` et le `CHANGELOG.md` du tag.
+- SBOM CycloneDX (`fec-check-<version>-sbom.cdx.json`) joint à chaque
+  release pour audit de la chaîne de dépendances.
+- `SHA256SUMS` + signature `SHA256SUMS.sig` (sigstore keyless) joints à
+  chaque release pour vérification d'intégrité et d'origine sans clé
+  privée détenue par RezDevOps.
+- macOS Intel (`osx-x64`) et Linux ARM (`linux-arm64` / `linux-musl-x64`)
+  ne sont **pas** distribués au MVP : à ajouter sur demande client réelle.
+- Pas de signature Authenticode Windows (SmartScreen peut afficher un
+  avertissement au premier lancement) : reportée tant qu'un usage client
+  ne le justifie pas.
+
+### Dépendances
+- Aucune dépendance NuGet ajoutée au runtime du Core ou du CLI.
+  `dotnet-CycloneDX` est installé en `dotnet tool install --global` dans
+  le job `publish` du workflow uniquement — il n'est pas embarqué dans le
+  binaire livré à l'utilisateur.
 
 ## [0.4.0] — 2026-04-28
 

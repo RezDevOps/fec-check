@@ -2,7 +2,7 @@
 
 > Validateur de **Fichier des Écritures Comptables** (FEC) pour les TPE et PME françaises.
 > Ligne de commande, déterministe, sans réseau, en français.
-> Statut : **v0.4.0 — 21 règles couvertes + sorties Markdown et JSON v1 (J4)**. Binaires multi-OS au jalon suivant (cf. [`CHANGELOG.md`](CHANGELOG.md)).
+> Statut : **v1.0.0 — 21 règles, binaires multi-OS Native AOT (J5)**. Cf. [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -75,7 +75,7 @@ Les projets `Cli` et `Tests` n'ajoutent aucune dépendance tierce supplémentair
 
 ## Usage
 
-À partir de **v0.4.0**, le binaire valide les 21 règles des Familles A, B et C, imprime un résumé console en français, et peut générer en plus un rapport Markdown finalisé (lecture humaine) et/ou un rapport JSON v1 (consommation programmatique).
+Le binaire valide les 21 règles des Familles A, B et C, imprime un résumé console en français, et peut générer en plus un rapport Markdown finalisé (lecture humaine) et/ou un rapport JSON v1 (consommation programmatique).
 
 ```bash
 # Validation simple, résumé console uniquement
@@ -141,18 +141,72 @@ Un exemple complet de rapport Markdown est publié dans [`docs/rapport-exemple.m
 
 ## Installation
 
-À partir du jalon J5 (`v1.0.0`), des binaires self-contained pour Windows x64, Linux x64 et macOS (Apple Silicon + Intel) seront publiés via les [Releases GitHub](https://github.com/RezDevOps/fec-check/releases). Aucune installation de .NET requise sur le poste.
+À partir de **`v1.0.0`** (J5), des binaires **self-contained Native AOT** sont publiés à chaque tag dans les [Releases GitHub](https://github.com/RezDevOps/fec-check/releases). **Aucune installation de .NET requise** sur le poste.
 
-En attendant, pour compiler depuis les sources :
+| Plateforme | Archive | Binaire |
+|---|---|---|
+| Windows 10/11 x64 | `fec-check-<version>-win-x64.zip` | `fec-check.exe` |
+| Linux x64 (Ubuntu, Debian, RHEL, …) | `fec-check-<version>-linux-x64.tar.gz` | `fec-check` |
+| macOS Apple Silicon (M1/M2/M3/M4) | `fec-check-<version>-osx-arm64.tar.gz` | `fec-check` |
+
+Les binaires Native AOT pèsent quelques mégaoctets et démarrent en quelques millisecondes (pas de JIT runtime embarqué). macOS Intel et Linux ARM ne sont pas distribués par défaut au MVP — ouvrez une issue si nécessaire.
+
+### Vérifier l'intégrité et l'origine
+
+À côté des archives, chaque release publie :
+
+- `SHA256SUMS` — empreintes SHA-256 de tous les artefacts ;
+- `SHA256SUMS.sig` — signature [sigstore](https://www.sigstore.dev/) (cosign keyless via OIDC GitHub) ;
+- `fec-check-<version>-sbom.cdx.json` — SBOM [CycloneDX](https://cyclonedx.org/) pour audit de la chaîne de dépendances.
+
+```bash
+# 1. Vérifier l'intégrité (toutes plateformes, sha256sum natif sous Linux/macOS,
+#    `Get-FileHash` ou `certutil -hashfile` sous Windows).
+sha256sum -c SHA256SUMS
+
+# 2. Vérifier l'origine (cosign keyless, prouve que SHA256SUMS a bien été
+#    signé par le workflow GitHub Actions de RezDevOps/fec-check).
+cosign verify-blob \
+  --bundle SHA256SUMS.sig \
+  --certificate-identity-regexp '^https://github.com/RezDevOps/fec-check/' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  SHA256SUMS
+```
+
+Aucune clé privée n'est détenue par RezDevOps : les signatures sont ancrées au workflow GitHub Actions du repo (transparency log [Rekor](https://docs.sigstore.dev/logging/overview/)). Voir [`SECURITY.md`](SECURITY.md) pour la politique de signalement.
+
+### Compilation depuis les sources
+
+Pour les contributeurs ou un environnement où le binaire publié ne convient pas :
 
 ```bash
 git clone https://github.com/RezDevOps/fec-check.git
 cd fec-check
 dotnet build -c Release
 dotnet run --project src/RezDevOps.FecCheck.Cli -- --help
+
+# Pour produire le binaire Native AOT localement (RID adapté à votre poste) :
+dotnet publish src/RezDevOps.FecCheck.Cli \
+  -c Release \
+  -r linux-x64 \
+  --self-contained true \
+  -o ./out
+./out/fec-check --version
 ```
 
-Prérequis : SDK .NET 8 LTS. La version est épinglée par le `global.json` à la racine (bande `8.0.x`, `rollForward: latestFeature`) — `dotnet build` choisira automatiquement le patch installé sur le poste tant qu'il appartient à cette bande.
+Prérequis : SDK .NET 8 LTS, plus l'outillage natif requis par AOT :
+
+- **Linux** — `clang` + `zlib` (paquets `clang` + `zlib1g-dev` sous Debian/Ubuntu).
+- **Windows** — Visual Studio Build Tools avec workload C++.
+- **macOS** — Xcode Command Line Tools **et** [LLVM via Homebrew](https://formulae.brew.sh/formula/llvm) pour fournir `llvm-objcopy` (Apple ne livre pas `objcopy`, sans lequel le strip des symboles AOT échoue) :
+
+  ```sh
+  brew install llvm
+  echo 'export PATH="$(brew --prefix llvm)/bin:$PATH"' >> ~/.zshrc
+  exec zsh
+  ```
+
+La version SDK est épinglée par le `global.json` à la racine (bande `8.0.x`, `rollForward: latestFeature`).
 
 ## Architecture
 
@@ -193,8 +247,8 @@ fec-check/
 | **J1** | Famille A — conformité de format | livré (`v0.1.0`) |
 | **J2** | Famille B — cohérence comptable | livré (`v0.2.0`) |
 | **J3** | Famille C — cohérence temporelle | livré (`v0.3.0`) |
-| **J4** | Rapport Markdown finalisé, rapport JSON v1, codes de retour | **livré (`v0.4.0`)** |
-| **J5** | Pipeline release multi-OS, premiers binaires publiés | à venir (`v1.0.0`) |
+| **J4** | Rapport Markdown finalisé, rapport JSON v1, codes de retour | livré (`v0.4.0`) |
+| **J5** | Pipeline release multi-OS, binaires AOT, SBOM, sigstore | **livré (`v1.0.0`)** |
 
 Voir [`CHANGELOG.md`](CHANGELOG.md) pour le détail commit par commit.
 

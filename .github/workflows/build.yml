@@ -50,3 +50,47 @@ jobs:
 
       - name: Vérifier le format C#
         run: dotnet format fec-check.sln --verify-no-changes --severity warn
+
+  # ------------------------------------------------------------------------
+  # Garde AOT (J5) — détecte en amont d'une release toute régression qui
+  # casserait la publication Native AOT (warning IL2xxx promu en erreur,
+  # API non-trimmable introduite, dépendance ajoutée incompatible AOT).
+  # Tourne uniquement sur linux-x64 : un seul RID suffit pour valider la
+  # surface ; les trois RID sont testés pour de vrai dans release.yml. Si
+  # ce job casse, c'est qu'une PR vient d'introduire de la réflexion non
+  # maîtrisée — il faut soit ajouter une DynamicDependency, soit revoir
+  # l'approche, soit (en dernier recours) isoler AOT sur la zone.
+  # ------------------------------------------------------------------------
+  aot-smoke:
+    name: AOT smoke (linux-x64)
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer le SDK .NET 8 LTS
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish Native AOT (linux-x64)
+        run: >-
+          dotnet publish src/RezDevOps.FecCheck.Cli/RezDevOps.FecCheck.Cli.csproj
+          --configuration Release
+          --runtime linux-x64
+          --self-contained true
+          -o artifacts/aot-smoke
+
+      - name: Le binaire AOT démarre
+        run: |
+          set -euo pipefail
+          ./artifacts/aot-smoke/fec-check --version
+          ./artifacts/aot-smoke/fec-check --help > /dev/null
+
+      - name: Le binaire AOT valide une fixture conforme
+        run: |
+          set -euo pipefail
+          ./artifacts/aot-smoke/fec-check tests/fixtures/conforme/fec-minimal-conforme.txt
+          # Code de retour attendu : 0 (Conforme). `set -e` fait échouer le
+          # job si fec-check retourne autre chose que 0.

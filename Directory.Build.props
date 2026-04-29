@@ -24,6 +24,13 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/RezDevOps/fec-check</RepositoryUrl>
+    <!--
+      Source de vérité unique pour la version d'assemblage. Doit rester alignée
+      sur FecCheckInfo.Version et sur le tag git associé. La CI release surcharge
+      au besoin via -p:Version=$tag pour publier des prereleases sans toucher au
+      fichier (utile pour les rc/beta).
+    -->
+    <Version>1.0.0</Version>
   </PropertyGroup>
 
 </Project>

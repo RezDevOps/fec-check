@@ -2,8 +2,8 @@
 
 # Rapport d'analyse FEC
 
-**Outil** : fec-check 0.4.0
-**Généré le** : 2026-04-28T14:30:00Z
+**Outil** : fec-check 1.0.0
+**Généré le** : 2026-04-29T14:30:00Z
 **Fichier analysé** : `exports/fec-2024-sarl-lumieres-du-marais.txt`
 
 ## Verdict — NON CONFORME

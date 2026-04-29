@@ -4,6 +4,18 @@
     <RootNamespace>RezDevOps.FecCheck.Core</RootNamespace>
     <AssemblyName>RezDevOps.FecCheck.Core</AssemblyName>
     <Description>Bibliothèque de validation FEC (Fichier des Écritures Comptables). Sans I/O, testable à 100 %.</Description>
+
+    <!--
+      Marque l'assembly comme trim-safe : il n'utilise pas de réflexion ni
+      d'API non-AOT-friendly. Indispensable pour que le CLI puisse publier en
+      Native AOT (J5) sans warning IL2104 ni élagage trop agressif. Si une
+      future règle introduit une API non-trimmable, le build CLI échouera et
+      forcera la décision (ajouter une DynamicDependency, ou désactiver le
+      trimming sur cette zone précise) plutôt que de laisser passer une
+      régression silencieuse.
+    -->
+    <IsTrimmable>true</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>

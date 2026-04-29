@@ -21,8 +21,8 @@ Trois règles d'évolution :
 ```jsonc
 {
   "schemaVersion": 1,
-  "outil": { "nom": "fec-check", "version": "0.4.0" },
-  "genereLe": "2026-04-28T14:30:00Z",
+  "outil": { "nom": "fec-check", "version": "1.0.0" },
+  "genereLe": "2026-04-29T14:30:00Z",
   "fichier": {
     "chemin": "/chemin/vers/le/fichier.txt",
     "encodage": "UTF-8",
@@ -48,14 +48,14 @@ Tous les noms de champs sont en `camelCase`. Les chaînes vides ne sont jamais u
 
 ### 3.1 `schemaVersion` (requis, entier)
 
-Numéro de version du schéma. Vaut `1` pour `v0.4.0`. Doit être lu en tout premier par les consommateurs pour décider s'ils savent traiter le document.
+Numéro de version du schéma. Vaut `1` depuis `v0.4.0` (figé à `1` pour toute la branche `v1.x`). Doit être lu en tout premier par les consommateurs pour décider s'ils savent traiter le document.
 
 ### 3.2 `outil` (requis, objet)
 
 | Sous-champ | Type | Description |
 |---|---|---|
 | `nom` | string | Nom du produit. Stable : `"fec-check"`. |
-| `version` | string | Version SemVer du produit (ex : `"0.4.0"`). |
+| `version` | string | Version SemVer du produit (ex : `"1.0.0"`). |
 
 ### 3.3 `genereLe` (requis, string ISO-8601)
 
@@ -140,8 +140,8 @@ Liste ordonnée des anomalies dans l'ordre de leur découverte par le validateur
 ```json
 {
   "schemaVersion": 1,
-  "outil": { "nom": "fec-check", "version": "0.4.0" },
-  "genereLe": "2026-04-28T14:30:00Z",
+  "outil": { "nom": "fec-check", "version": "1.0.0" },
+  "genereLe": "2026-04-29T14:30:00Z",
   "fichier": {
     "chemin": "exports/fec-2024.txt",
     "encodage": "UTF-8",

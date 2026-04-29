@@ -1,0 +1,375 @@
+# --------------------------------------------------------------------------
+# Pipeline de release fec-check (J5).
+#
+# Déclenchement : push d'un tag git correspondant à `v*` (ex. v1.0.0).
+# Disponible en workflow_dispatch pour des dry-runs manuels (l'archive sera
+# alors taggée 0.0.0-dispatch et la création de Release GitHub est sautée).
+#
+# Sortie : trois binaires self-contained Native AOT (un par RID), empaquetés,
+# accompagnés d'un SBOM CycloneDX, d'un fichier SHA256SUMS et d'une signature
+# sigstore keyless. Le tout est publié comme Release GitHub.
+#
+# Choix structurants (cf. cadrage §6.1 / §7.1 et J5) :
+# - 3 RID seulement : win-x64, linux-x64, osx-arm64. osx-x64 est volontairement
+#   exclu pour rester sobre ; sera ajouté si une demande client le justifie.
+# - AOT activée : binaires ~5-10 Mo, démarrage instantané. Cf. csproj du CLI.
+# - SBOM : CycloneDX uniquement (standard de fait dans .NET, support GitHub +
+#   Trivy + Grype). SPDX reportable si une admin le demande.
+# - Signature : sigstore/cosign en mode keyless via OIDC GitHub. Pas de
+#   certificat Authenticode (out-of-scope MVP, ~400 €/an).
+# --------------------------------------------------------------------------
+
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version simulée (sans tag, ne crée pas de Release GitHub)"
+        required: false
+        default: "0.0.0-dispatch"
+
+# Une seule release active à la fois pour éviter qu'un push de tag rapide
+# ne marche sur les artefacts d'un précédent build.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  # contents:write : création de la GitHub Release et upload des artefacts.
+  # id-token:write : OIDC pour cosign keyless (sigstore).
+  # attestations:write : génération d'attestations de provenance SLSA.
+  contents: write
+  id-token: write
+  attestations: write
+
+env:
+  DOTNET_VERSION: 8.0.x
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  # ------------------------------------------------------------------------
+  # 1. Tests — barrière de sortie : aucun binaire publié si les tests
+  #    rouges. Réutilise les conditions de la CI normale (Linux, Release).
+  # ------------------------------------------------------------------------
+  test:
+    name: Tests (barrière de sortie)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer le SDK .NET 8 LTS
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restaurer
+        run: dotnet restore fec-check.sln
+
+      - name: Build (Release)
+        run: dotnet build fec-check.sln --no-restore --configuration Release
+
+      - name: Tests (Release)
+        run: >-
+          dotnet test fec-check.sln
+          --no-build
+          --configuration Release
+          --logger "console;verbosity=normal"
+
+  # ------------------------------------------------------------------------
+  # 2. Calcul de la version à embarquer dans les binaires et les archives.
+  #    - tag `v1.2.3` → 1.2.3
+  #    - workflow_dispatch → input.version (ou 0.0.0-dispatch)
+  #    Centralisé pour qu'une seule source de vérité circule entre les jobs.
+  # ------------------------------------------------------------------------
+  prepare:
+    name: Préparer la version
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 2
+    outputs:
+      version: ${{ steps.compute.outputs.version }}
+      is_release: ${{ steps.compute.outputs.is_release }}
+    steps:
+      - id: compute
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            IS_RELEASE=true
+          else
+            VERSION="${{ inputs.version || '0.0.0-dispatch' }}"
+            IS_RELEASE=false
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "is_release=${IS_RELEASE}" >> "$GITHUB_OUTPUT"
+          echo "Version retenue : ${VERSION} (release=${IS_RELEASE})"
+
+  # ------------------------------------------------------------------------
+  # 3. Build des binaires self-contained AOT, un par RID. Chaque runner
+  #    builde sa propre cible native (pas de cross-compilation AOT en .NET 8).
+  # ------------------------------------------------------------------------
+  build:
+    name: Build AOT (${{ matrix.rid }})
+    needs: prepare
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+            archive_format: zip
+            archive_ext: zip
+            binary_name: fec-check.exe
+          - rid: linux-x64
+            os: ubuntu-latest
+            archive_format: tar
+            archive_ext: tar.gz
+            binary_name: fec-check
+          - rid: osx-arm64
+            os: macos-14
+            archive_format: tar
+            archive_ext: tar.gz
+            binary_name: fec-check
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer le SDK .NET 8 LTS
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # ----------------------------------------------------------------------
+      # Pré-requis natif Native AOT pour macOS uniquement.
+      # AOT a besoin d'un outil objcopy/llvm-objcopy pour stripper les
+      # symboles du binaire natif. macOS n'en fournit aucun par défaut
+      # (Apple ships `strip` mais pas `objcopy`). Sans ce step, le build
+      # plante au moment du link avec :
+      #   "Symbol stripping tool ('llvm-objcopy' or 'objcopy') not found
+      #    in PATH."
+      # Linux ubuntu-latest : objcopy déjà présent (binutils preinstallé).
+      # Windows : utilise les outils MSVC, pas concerné.
+      # ----------------------------------------------------------------------
+      - name: Installer LLVM (macOS uniquement, requis par AOT)
+        if: runner.os == 'macOS'
+        run: |
+          set -euo pipefail
+          brew install llvm
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+
+      - name: Publish self-contained AOT
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/staging
+          dotnet publish src/RezDevOps.FecCheck.Cli/RezDevOps.FecCheck.Cli.csproj \
+            --configuration Release \
+            --runtime ${{ matrix.rid }} \
+            --self-contained true \
+            -p:Version=${VERSION} \
+            -p:AssemblyVersion=$(echo ${VERSION} | sed 's/-.*$//').0 \
+            -p:FileVersion=$(echo ${VERSION} | sed 's/-.*$//').0 \
+            -p:InformationalVersion=${VERSION} \
+            -o artifacts/publish
+          echo "--- Contenu du publish ---"
+          ls -lh artifacts/publish
+
+      - name: Préparer l'archive
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          STAGING=artifacts/staging/fec-check-${VERSION}-${{ matrix.rid }}
+          mkdir -p "${STAGING}"
+          cp artifacts/publish/${{ matrix.binary_name }} "${STAGING}/"
+          cp README.md LICENSE CHANGELOG.md "${STAGING}/"
+
+      - name: Empaquetage (zip Windows)
+        if: matrix.archive_format == 'zip'
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          $stagingRoot = "artifacts/staging/fec-check-$env:VERSION-${{ matrix.rid }}"
+          $archive    = "artifacts/fec-check-$env:VERSION-${{ matrix.rid }}.zip"
+          New-Item -ItemType Directory -Force -Path "artifacts" | Out-Null
+          Compress-Archive -Path "$stagingRoot/*" -DestinationPath $archive
+          Get-Item $archive
+
+      - name: Empaquetage (tar.gz Unix)
+        if: matrix.archive_format == 'tar'
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          STAGING_PARENT=artifacts/staging
+          STAGING_NAME=fec-check-${VERSION}-${{ matrix.rid }}
+          ARCHIVE=artifacts/${STAGING_NAME}.tar.gz
+          tar -czf "${ARCHIVE}" -C "${STAGING_PARENT}" "${STAGING_NAME}"
+          ls -lh "${ARCHIVE}"
+
+      - name: Smoke test (le binaire publié démarre et affiche --version)
+        if: matrix.os != 'windows-latest'
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          STAGING=artifacts/staging/fec-check-${VERSION}-${{ matrix.rid }}
+          chmod +x "${STAGING}/${{ matrix.binary_name }}"
+          OUT=$("${STAGING}/${{ matrix.binary_name }}" --version)
+          echo "Sortie binaire : ${OUT}"
+          # On accepte le format "fec-check 1.2.3" — ne valide pas la valeur
+          # exacte (un workflow_dispatch peut produire 0.0.0-dispatch).
+          echo "${OUT}" | grep -E '^fec-check [0-9]+\.[0-9]+\.[0-9]+'
+
+      - name: Smoke test (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          $exe = "artifacts/staging/fec-check-$env:VERSION-${{ matrix.rid }}/${{ matrix.binary_name }}"
+          $out = & $exe --version
+          Write-Host "Sortie binaire : $out"
+          if ($out -notmatch '^fec-check \d+\.\d+\.\d+') {
+            throw "Sortie --version inattendue : $out"
+          }
+
+      - name: Upload de l'archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: fec-check-${{ needs.prepare.outputs.version }}-${{ matrix.rid }}
+          path: artifacts/fec-check-${{ needs.prepare.outputs.version }}-${{ matrix.rid }}.${{ matrix.archive_ext }}
+          if-no-files-found: error
+          retention-days: 7
+
+  # ------------------------------------------------------------------------
+  # 4. SBOM CycloneDX + checksums + signatures + Release GitHub.
+  #    Tourne après que toutes les archives sont disponibles.
+  # ------------------------------------------------------------------------
+  publish:
+    name: Publier la Release GitHub
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer le SDK .NET 8 LTS
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Récupérer les archives produites
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/downloads
+          merge-multiple: true
+
+      - name: Lister les archives reçues
+        run: ls -lh artifacts/downloads
+
+      # ----- SBOM CycloneDX -------------------------------------------------
+      # `dotnet-CycloneDX` parse la solution et émet un BOM JSON. On le
+      # publie séparément pour qu'un consommateur (audit, scanner) puisse
+      # vérifier la chaîne de dépendances NuGet sans télécharger un binaire.
+      - name: Installer dotnet-CycloneDX
+        run: dotnet tool install --global CycloneDX
+
+      - name: Générer le SBOM CycloneDX
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/sbom
+          dotnet CycloneDX fec-check.sln \
+            --output artifacts/sbom \
+            --filename fec-check-${VERSION}-sbom.cdx.json \
+            --json
+          ls -lh artifacts/sbom
+
+      # ----- SHA256SUMS -----------------------------------------------------
+      # Un seul fichier qui regroupe tous les artefacts livrés (archives +
+      # SBOM). Format compatible `sha256sum -c` côté utilisateur.
+      - name: Calculer SHA256SUMS
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/release
+          cp artifacts/downloads/*.zip artifacts/downloads/*.tar.gz artifacts/release/ 2>/dev/null || true
+          cp artifacts/sbom/fec-check-${VERSION}-sbom.cdx.json artifacts/release/
+          cd artifacts/release
+          sha256sum * > SHA256SUMS
+          echo "--- SHA256SUMS ---"
+          cat SHA256SUMS
+
+      # ----- Signature sigstore --------------------------------------------
+      # cosign en mode keyless via OIDC GitHub : pas de clé privée à gérer,
+      # la signature est ancrée au workflow + commit + identité du runner.
+      # Vérifiable côté utilisateur avec :
+      #   cosign verify-blob --bundle SHA256SUMS.sig \
+      #     --certificate-identity-regexp '^https://github.com/RezDevOps/fec-check/' \
+      #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+      #     SHA256SUMS
+      - name: Installer cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.4.1'
+
+      - name: Signer SHA256SUMS
+        env:
+          COSIGN_YES: "true"
+        run: |
+          set -euo pipefail
+          cd artifacts/release
+          cosign sign-blob \
+            --bundle SHA256SUMS.sig \
+            SHA256SUMS
+          ls -lh
+
+      # ----- Attestation SLSA de provenance --------------------------------
+      # Trace cryptographique reliant chaque binaire au workflow qui l'a
+      # produit. GitHub publie l'attestation sur Rekor et la rend vérifiable
+      # avec `gh attestation verify <fichier> --owner RezDevOps`.
+      - name: Attestation de provenance
+        if: needs.prepare.outputs.is_release == 'true'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            artifacts/release/*.zip
+            artifacts/release/*.tar.gz
+            artifacts/release/*.cdx.json
+
+      # ----- Création de la Release GitHub ---------------------------------
+      - name: Créer la GitHub Release
+        if: needs.prepare.outputs.is_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: fec-check ${{ needs.prepare.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: ${{ contains(needs.prepare.outputs.version, '-') }}
+          generate_release_notes: false
+          body_path: .github/release-notes-template.md
+          fail_on_unmatched_files: true
+          files: |
+            artifacts/release/*.zip
+            artifacts/release/*.tar.gz
+            artifacts/release/*.cdx.json
+            artifacts/release/SHA256SUMS
+            artifacts/release/SHA256SUMS.sig
