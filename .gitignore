@@ -47,6 +47,10 @@ desktop.ini
 .tools/
 .local/
 
+# --- Brouillons messages de commit/tag (préparés en amont, lus via git -F) ---
+COMMIT_MSG_*.txt
+TAG_MSG_*.txt
+
 # --- Sorties de l'outil lui-même (rapports générés en dev) ---
 /rapports/
 *.fec-check.md

@@ -2,7 +2,7 @@
 
 > Validateur de **Fichier des Écritures Comptables** (FEC) pour les TPE et PME françaises.
 > Ligne de commande, déterministe, sans réseau, en français.
-> Statut : **v1.0.0 — 21 règles, binaires multi-OS Native AOT (J5)**. Cf. [`CHANGELOG.md`](CHANGELOG.md).
+> Statut : **v1.1.0 - 21 règles, binaires multi-OS Native AOT, runtime .NET 10 LTS**. Cf. [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -33,7 +33,7 @@ Sources : [legifrance.gouv.fr](https://www.legifrance.gouv.fr/) et [bofip.impots
 
 La norme est stable depuis 2014, dernière mise à jour majeure du BOFiP en 2017 sur le format. Aucune réforme annoncée à 12 mois.
 
-## Ce que l'outil vérifie (cible MVP v1.0.0)
+## Ce que l'outil vérifie (cible MVP v1.1.0)
 
 Trois familles de règles, dans l'ordre d'exécution. Si une famille échoue de manière bloquante, les suivantes ne sont pas exécutées.
 
@@ -65,11 +65,13 @@ Garde-fous explicites pour ne pas refaire l'erreur classique du « petit utilita
 
 ## Dépendances
 
-À v0.1.0, **une seule** dépendance NuGet est ajoutée à la bibliothèque `Core`, en plus de la BCL .NET 8 :
+Depuis la migration `v1.1.0`, la bibliothèque `Core` n'a **aucune dépendance NuGet tierce**. Tout repose sur la BCL .NET 10.
 
-| Package | Version | Émetteur | Justification |
-|---|---|---|---|
-| `System.Text.Encoding.CodePages` | `8.0.0` | Microsoft (officiel) | Le runtime .NET sur Linux et macOS ne charge pas par défaut la code page `28605` (ISO-8859-15 / Latin-9), pourtant exigée par la norme FEC. Ce package, publié par Microsoft, expose la code page de manière portable. Le runtime Windows l'inclut déjà nativement. |
+| Composant requis | Source | Justification |
+|---|---|---|
+| `CodePagesEncodingProvider` (ISO-8859-15 / code page `28605`) | **BCL .NET 10** (anciennement package `System.Text.Encoding.CodePages`) | Le runtime .NET sur Linux et macOS ne charge pas par défaut la code page `28605`, pourtant exigée par la norme FEC. À partir de .NET 10, le type `CodePagesEncodingProvider` est fourni nativement par la BCL : il suffit d'appeler `Encoding.RegisterProvider(CodePagesEncodingProvider.Instance)` au démarrage. Le package OOB historique (`System.Text.Encoding.CodePages` 8.0.0) a été retiré à la migration v1.1.0 (warning `NU1510` du SDK .NET 10). |
+
+Historiquement (de `v0.1.0` à `v1.0.0`), la seule dépendance NuGet du `Core` était `System.Text.Encoding.CodePages` 8.0.0. Sa suppression en `v1.1.0` est une conséquence positive de la bascule .NET 10.
 
 Les projets `Cli` et `Tests` n'ajoutent aucune dépendance tierce supplémentaire (xUnit + FluentAssertions côté tests uniquement). Cette posture sera maintenue aux jalons suivants : toute nouvelle dépendance sera justifiée ici.
 
@@ -141,7 +143,7 @@ Un exemple complet de rapport Markdown est publié dans [`docs/rapport-exemple.m
 
 ## Installation
 
-À partir de **`v1.0.0`** (J5), des binaires **self-contained Native AOT** sont publiés à chaque tag dans les [Releases GitHub](https://github.com/RezDevOps/fec-check/releases). **Aucune installation de .NET requise** sur le poste.
+À partir de **`v1.0.0`** (J5), des binaires **self-contained Native AOT** sont publiés à chaque tag dans les [Releases GitHub](https://github.com/RezDevOps/fec-check/releases). À partir de `v1.1.0` ils sont produits avec le runtime **.NET 10 LTS**. **Aucune installation de .NET requise** sur le poste.
 
 | Plateforme | Archive | Binaire |
 |---|---|---|
@@ -194,7 +196,7 @@ dotnet publish src/RezDevOps.FecCheck.Cli \
 ./out/fec-check --version
 ```
 
-Prérequis : SDK .NET 8 LTS, plus l'outillage natif requis par AOT :
+Prérequis : SDK .NET 10 LTS, plus l'outillage natif requis par AOT :
 
 - **Linux** — `clang` + `zlib` (paquets `clang` + `zlib1g-dev` sous Debian/Ubuntu).
 - **Windows** — Visual Studio Build Tools avec workload C++.
@@ -206,7 +208,7 @@ Prérequis : SDK .NET 8 LTS, plus l'outillage natif requis par AOT :
   exec zsh
   ```
 
-La version SDK est épinglée par le `global.json` à la racine (bande `8.0.x`, `rollForward: latestFeature`).
+La version SDK est épinglée par le `global.json` à la racine (bande `10.0.x`, `rollForward: latestFeature`).
 
 ## Architecture
 

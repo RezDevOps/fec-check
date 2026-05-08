@@ -21,7 +21,7 @@ namespace RezDevOps.FecCheck.Core;
 /// <para>
 /// La sérialisation passe par une <see cref="JsonSerializerContext"/> source-generated
 /// pour rester AOT-friendly (cf. cadrage §6.1 — option AOT). Aucune dépendance
-/// NuGet tierce n'est introduite : System.Text.Json est embarqué par la BCL .NET 8.
+/// NuGet tierce n'est introduite : System.Text.Json est embarqué par la BCL .NET 10.
 /// </para>
 /// </remarks>
 public static class JsonReportWriter

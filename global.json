@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/global.json",
-  "_comment": "Fige la bande SDK .NET 8 LTS pour ce repo. rollForward 'latestFeature' tolère tout patch SDK 8.0.1xx et au-delà — pratique pour ne pas imposer un patch précis aux contributeurs et à la CI, tout en bloquant un saut accidentel vers .NET 9/10. À revoir lors de la migration .NET 10 LTS planifiée fin 2026 (Data Context §3.1).",
+  "_comment": "Fige la bande SDK .NET 10 LTS pour ce repo. rollForward 'latestFeature' tolère tout patch SDK 10.0.1xx et au-delà : pratique pour ne pas imposer un patch précis aux contributeurs et à la CI, tout en bloquant un saut accidentel vers une future major (.NET 11/12). Migré de .NET 8 LTS vers .NET 10 LTS le 2026-05-08 (anticipation fin de support .NET 8 en novembre 2026, cf. Data Context §3.1).",
   "sdk": {
-    "version": "8.0.100",
+    "version": "10.0.100",
     "rollForward": "latestFeature",
     "allowPrerelease": false
   }

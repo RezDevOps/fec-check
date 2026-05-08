@@ -74,8 +74,15 @@ sera ajoutée si une demande client réelle le justifie.
 
 ## Dépendances tierces
 
-Le projet maintient une seule dépendance NuGet en plus de la BCL .NET 8 :
-`System.Text.Encoding.CodePages` (Microsoft, MIT, requis pour décoder
-ISO-8859-15 hors Windows). Toute nouvelle dépendance sera justifiée dans
-le `README.md` (§ Dépendances) et listée dans le SBOM publié à chaque
-release.
+Depuis la migration `v1.1.0` (.NET 10), le projet n'a **aucune dépendance
+NuGet tierce** côté `Core` : tout repose sur la BCL .NET 10. Le type
+`CodePagesEncodingProvider` (utilisé pour décoder ISO-8859-15 hors Windows)
+est fourni nativement par le runtime à partir de .NET 10 ; le package OOB
+historique (`System.Text.Encoding.CodePages` 8.0.0) a été retiré.
+
+Le projet `Cli` n'ajoute aucune dépendance. Le projet `Tests` utilise
+xUnit, FluentAssertions et coverlet.collector en `<PrivateAssets>` (jamais
+embarqués dans les binaires distribués).
+
+Toute nouvelle dépendance sera justifiée dans le `README.md` (§ Dépendances)
+et listée dans le SBOM publié à chaque release.

@@ -47,7 +47,7 @@ permissions:
   attestations: write
 
 env:
-  DOTNET_VERSION: 8.0.x
+  DOTNET_VERSION: 10.0.x
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
@@ -63,7 +63,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Installer le SDK .NET 8 LTS
+      - name: Installer le SDK .NET 10 LTS
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -113,7 +113,10 @@ jobs:
 
   # ------------------------------------------------------------------------
   # 3. Build des binaires self-contained AOT, un par RID. Chaque runner
-  #    builde sa propre cible native (pas de cross-compilation AOT en .NET 8).
+  #    builde sa propre cible native. La cross-compilation AOT a progressé
+  #    en .NET 9 et 10 mais reste partielle (notamment pour la signature
+  #    macOS) ; on garde 1 runner par RID pour pouvoir runner les smoke
+  #    tests natifs et signer correctement.
   # ------------------------------------------------------------------------
   build:
     name: Build AOT (${{ matrix.rid }})
@@ -142,7 +145,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Installer le SDK .NET 8 LTS
+      - name: Installer le SDK .NET 10 LTS
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -269,7 +272,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Installer le SDK .NET 8 LTS
+      - name: Installer le SDK .NET 10 LTS
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
