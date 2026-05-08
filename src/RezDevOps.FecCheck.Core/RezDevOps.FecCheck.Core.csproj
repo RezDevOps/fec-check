@@ -18,15 +18,17 @@
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!--
-      Package Microsoft officiel requis pour décoder ISO-8859-15 hors Windows.
-      L'A. 47 A-1 LPF autorise cet encodage pour les FEC ; sans ce package, la
-      BCL .NET 8 ne le fournit que sur Windows. Justification documentée dans
-      le README §Dépendances. Aucune autre dépendance NuGet tierce.
-    -->
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
-  </ItemGroup>
+  <!--
+    Aucune PackageReference. Depuis .NET 10, le type CodePagesEncodingProvider
+    (utilisé pour décoder ISO-8859-15 hors Windows, requis par l'A. 47 A-1 LPF
+    pour les FEC) est fourni nativement par la BCL. Le package OOB historique
+    System.Text.Encoding.CodePages 8.0.0 a donc été retiré à la migration v1.1.0
+    (warning NU1510 du SDK .NET 10 sur les références pruned).
+
+    L'enregistrement explicite via Encoding.RegisterProvider(CodePagesEncodingProvider.Instance)
+    reste nécessaire au runtime sur Linux/macOS (cf. EncodingDetector.EnsureCodePagesRegistered).
+    Seul le package NuGet est devenu superflu.
+  -->
 
   <ItemGroup>
     <InternalsVisibleTo Include="RezDevOps.FecCheck.Core.Tests" />

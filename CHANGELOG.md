@@ -11,6 +11,55 @@ le cadrage `Agents IA/11_FEC_CHECK_CADRAGE.md` (§ critères de réussite) pour
 la suite (validation terrain sur un FEC client réel, puis itérations selon
 retours)._
 
+## [1.1.0] - 2026-05-08
+
+Migration de la stack runtime de **.NET 8 LTS** vers **.NET 10 LTS**.
+Anticipation de la fin de support .NET 8 LTS en novembre 2026, trajectoire
+LTS vers LTS (saut de la STS .NET 9). Nouveau support garanti jusqu'à
+novembre 2028.
+
+Aucun changement fonctionnel : les 21 règles FEC (Familles A, B, C)
+restent inchangées par rapport à `v1.0.0`. La surface d'API utilisée (BCL,
+`System.Text.Json` en source generation, `CodePagesEncodingProvider`) est
+stable entre .NET 8 et .NET 10. Le `Core` perd sa seule dépendance NuGet
+tierce (`System.Text.Encoding.CodePages`), désormais incluse dans la BCL
+.NET 10.
+
+### Modifié
+- `global.json` : SDK pinné `8.0.100` -> `10.0.100` (rollForward
+  `latestFeature` inchangé). Commentaire mis à jour pour refléter la
+  bande LTS courante.
+- `Directory.Build.props` : `<TargetFramework>` passé de `net8.0` à
+  `net10.0`. `<Version>` passé de `1.0.0` à `1.1.0`.
+- `src/RezDevOps.FecCheck.Core/RezDevOps.FecCheck.Core.csproj` :
+  `<PackageReference Include="System.Text.Encoding.CodePages" />` **retirée**.
+  À partir de .NET 10, le type `CodePagesEncodingProvider` est fourni
+  nativement par la BCL ; le package OOB historique est redondant et
+  déclenche le warning `NU1510` du SDK (promu en erreur par
+  `TreatWarningsAsErrors=true`). Conséquence positive : le projet `Core`
+  n'a plus aucune dépendance NuGet tierce.
+- `src/RezDevOps.FecCheck.Core/FecCheckInfo.cs` : `Version` const passé
+  à `1.1.0`, entrée historique `1.1.0` ajoutée.
+- `.github/workflows/build.yml` : `setup-dotnet` 8.0.x -> 10.0.x sur les
+  jobs `build-and-test` et `aot-smoke`. Libellés des steps mis à jour.
+- `.github/workflows/release.yml` : `DOTNET_VERSION` 8.0.x -> 10.0.x.
+  Libellés des trois steps `Installer le SDK` mis à jour. Commentaire de
+  la matrice AOT actualisé pour mentionner l'amélioration partielle de
+  la cross-compile en .NET 9/10 (on garde 1 runner par RID pour les
+  smoke tests natifs).
+- `.gitignore` : ajout du pattern `COMMIT_MSG_*.txt` / `TAG_MSG_*.txt`
+  pour exclure les brouillons de message préparés en amont des commits
+  et tags.
+
+### Notes
+- **FluentAssertions** reste volontairement en `6.12.x` sous Apache 2.0.
+  La v8 est passée sous licence Xceed (commerciale au-delà de certains
+  usages), bascule à arbitrer en session juridique dédiée, hors scope de
+  cette migration.
+- Les binaires AOT seront réémis pour les 3 RID (win-x64, linux-x64,
+  osx-arm64). Tailles attendues légèrement différentes des binaires
+  v1.0.0 (gains AOT cumulés sur 2 versions du runtime).
+
 ## [1.0.0] — 2026-04-29
 
 Jalon **J5** clos : `fec-check` est désormais distribuable. Le MVP est livré

@@ -18,6 +18,7 @@ public static class FecCheckInfo
     /// <remarks>
     /// Historique :
     /// <list type="bullet">
+    /// <item><description>1.1.0 - migration .NET 8 LTS vers .NET 10 LTS (anticipation fin de support .NET 8 en novembre 2026, trajectoire LTS vers LTS). Aucun changement fonctionnel : les 21 règles FEC restent inchangées.</description></item>
     /// <item><description>1.0.0 — J5 : pipeline release multi-OS, binaires self-contained Native AOT (win-x64, linux-x64, osx-arm64), SBOM CycloneDX, signature sigstore keyless. Premier MVP livrable.</description></item>
     /// <item><description>0.4.0 — J4 : rapports JSON (schéma v1 figé) et Markdown finalisés, flags <c>--output-md</c> et <c>--output-json</c>.</description></item>
     /// <item><description>0.3.0 — J3 : Famille C (cohérence temporelle) opérationnelle, option <c>--exercice</c>.</description></item>
@@ -26,7 +27,7 @@ public static class FecCheckInfo
     /// <item><description>0.0.0 — J0 : cadrage initial du repo, aucune règle implémentée.</description></item>
     /// </list>
     /// </remarks>
-    public const string Version = "1.0.0";
+    public const string Version = "1.1.0";
 
     /// <summary>
     /// Famille de règles de validation, telle que définie dans le cadrage §4.1.

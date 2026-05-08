@@ -6,7 +6,7 @@
 <Project>
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -30,7 +30,7 @@
       au besoin via -p:Version=$tag pour publier des prereleases sans toucher au
       fichier (utile pour les rc/beta).
     -->
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
 </Project>
