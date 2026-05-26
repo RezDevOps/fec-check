@@ -24,7 +24,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Installer le SDK .NET 10 LTS
         uses: actions/setup-dotnet@v4
@@ -67,7 +69,10 @@ jobs:
     needs: build-and-test
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Installer le SDK .NET 10 LTS
         uses: actions/setup-dotnet@v4
