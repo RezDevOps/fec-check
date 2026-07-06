@@ -67,7 +67,7 @@ jobs:
           persist-credentials: false
 
       - name: Installer le SDK .NET 10 LTS
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -152,7 +152,7 @@ jobs:
           persist-credentials: false
 
       - name: Installer le SDK .NET 10 LTS
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -259,7 +259,7 @@ jobs:
           }
 
       - name: Upload de l'archive
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: fec-check-${{ needs.prepare.outputs.version }}-${{ matrix.rid }}
           path: artifacts/fec-check-${{ needs.prepare.outputs.version }}-${{ matrix.rid }}.${{ matrix.archive_ext }}
@@ -282,12 +282,12 @@ jobs:
           persist-credentials: false
 
       - name: Installer le SDK .NET 10 LTS
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Récupérer les archives produites
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           path: artifacts/downloads
           merge-multiple: true
